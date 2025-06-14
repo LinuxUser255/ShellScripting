@@ -1,0 +1,242 @@
+#!/usr/bin/env bash
+
+#!/usr/bin/env bash
+#
+# Shell script demonstrating bash features following pure-bash.md guidelines
+#
+
+# Enable strict mode
+set -euo pipefail
+IFS=$'\n\t'  # Set IFS to newline and tab to avoid issues with spaces in filenames
+
+# Constants - using readonly to prevent accidental modification
+readonly E_BADARGS=85       # Invalid number of arguments
+readonly E_NOTFOUND=127     # File or command not found
+
+# Color definitions for terminal output
+readonly RED='\033[0;31m'    # Used for errors
+readonly GREEN='\033[0;32m'  # Used for success messages
+readonly YELLOW='\033[0;33m' # Used for warnings
+readonly BLUE='\033[0;34m'   # Used for info messages
+readonly NC='\033[0m'        # No Color - resets text formatting
+
+# Helper functions for colorful output
+info() {
+    printf "${BLUE}[INFO]${NC} %s\n" "$1"
+}
+
+success() {
+    printf "${GREEN}[SUCCESS]${NC} %s\n" "$1"
+}
+
+warning() {
+    printf "${YELLOW}[WARNING]${NC} %s\n" "$1"
+}
+
+error() {
+    printf "${RED}[ERROR]${NC} %s\n" "$1" >&2
+}
+
+# Function: basic_var
+# Demonstrates basic variable usage and string manipulation
+# Arguments: None
+# Outputs: Various string operations
+basic_var() {
+    info "=== Example 1: Basic Variables and Strings ==="
+
+    local name="Bash Scripting"
+
+    # Use printf for consistent output formatting
+    printf "Hello, %s!\n" "${name}"
+    printf "Length of name: %d\n" "${#name}"
+
+    # Use parameter expansion for case conversion
+    printf "Uppercase: %s\n" "${name^^}"
+    printf "Lowercase: %s\n" "${name,,}"
+
+    # Use parameter expansion for string replacement
+    printf "Replace 'Bash' with 'Shell': %s\n" "${name/Bash/Shell}"
+
+    # Substring extraction
+    printf "First 4 characters: %s\n" "${name:0:4}"
+    printf "Characters starting at position 5: %s\n" "${name:5}"
+
+    # Default values
+    local unset_var
+    printf "Unset variable with default: %s\n" "${unset_var:-default value}"
+
+    success "Basic variable demonstration completed"
+    echo
+}
+
+# Function: basic_array
+# Demonstrates array operations following pure-bash guidelines
+# Arguments: None
+# Outputs: Various array operations
+basic_array() {
+    info "=== Example 2: Basic Array Usage ==="
+
+    # Declare array explicitly
+    local -a fruits
+    fruits=("apple" "banana" "orange" "grape" "kiwi")
+
+    # Print entire array with proper quoting
+    printf "Fruits array: %s\n" "${fruits[*]}"
+
+    # Access array elements
+    printf "First fruit: %s\n" "${fruits[0]}"
+    printf "Last fruit: %s\n" "${fruits[-1]}"
+
+    # Array length
+    printf "Number of fruits: %d\n" "${#fruits[@]}"
+
+    # Array slicing - get elements from index 1 to 3
+    printf "Fruits from index 1 to 3: %s\n" "${fruits[@]:1:2}"
+
+    # Iterate over array elements
+    info "Listing all fruits:"
+    local fruit
+    local i=0
+    for fruit in "${fruits[@]}"; do
+        printf "  %d: %s\n" "$((i++))" "${fruit}"
+    done
+
+    # Array operations
+    # Add element to array
+    fruits+=("mango")
+    printf "Added mango: %s\n" "${fruits[*]}"
+
+    # Remove element (by creating a new array)
+    local -a new_fruits=()
+    local remove_item="banana"
+    for fruit in "${fruits[@]}"; do
+        if [[ "${fruit}" != "${remove_item}" ]]; then
+            new_fruits+=("${fruit}")
+        fi
+    done
+    printf "After removing %s: %s\n" "${remove_item}" "${new_fruits[*]}"
+
+    success "Array demonstration completed"
+    echo
+}
+
+# Function: basic_conditionals
+# Demonstrates conditional statements and tests
+# Arguments: None
+# Outputs: Results of various conditional tests
+basic_conditionals() {
+    info "=== Example 3: Conditionals and Tests ==="
+
+    local number=42
+    local filename="/etc/passwd"
+    local string="Hello World"
+
+    # Numeric comparisons
+    if (( number > 50 )); then
+        printf "%d is greater than 50\n" "${number}"
+    elif (( number == 42 )); then
+        success "${number} is the answer to everything!"
+    else
+        printf "%d is less than 50 and not 42\n" "${number}"
+    fi
+
+    # String tests
+    if [[ -z "${string}" ]]; then
+        warning "String is empty"
+    else
+        printf "String length: %d\n" "${#string}"
+
+        # String pattern matching
+        if [[ "${string}" == *"World"* ]]; then
+            printf "String contains 'World'\n"
+        fi
+    fi
+
+    # File tests
+    if [[ -f "${filename}" ]]; then
+        printf "File %s exists\n" "${filename}"
+
+        if [[ -r "${filename}" ]]; then
+            printf "File %s is readable\n" "${filename}"
+        fi
+
+        if [[ -w "${filename}" ]]; then
+            printf "File %s is writable\n" "${filename}"
+        fi
+    else
+        error "File ${filename} not found"
+        return "${E_NOTFOUND}"
+    fi
+
+    # Compound conditions with && and ||
+    [[ -f "${filename}" && -r "${filename}" ]] && printf "File %s exists and is readable\n" "${filename}"
+
+    # Case statement
+    local fruit="apple"
+    case "${fruit}" in
+        apple)
+            printf "%s is red or green\n" "${fruit}"
+            ;;
+        banana)
+            printf "%s is yellow\n" "${fruit}"
+            ;;
+        orange)
+            printf "%s is orange\n" "${fruit}"
+            ;;
+        *)
+            printf "Unknown fruit: %s\n" "${fruit}"
+            ;;
+    esac
+
+    success "Conditionals demonstration completed"
+    echo
+}
+
+# Main function
+main() {
+    # Check if script is being sourced
+    if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+        warning "Script is being sourced, not executed directly"
+        return 0
+    fi
+
+    # Process command line arguments
+    if [[ $# -gt 0 ]]; then
+        case "$1" in
+            --help|-h)
+                printf "Usage: %s [OPTION]\n" "${0##*/}"
+                printf "Demonstrate bash scripting best practices\n\n"
+                printf "Options:\n"
+                printf "  --vars, -v    Run only variable examples\n"
+                printf "  --arrays, -a  Run only array examples\n"
+                printf "  --cond, -c    Run only conditional examples\n"
+                printf "  --help, -h    Display this help and exit\n"
+                return 0
+                ;;
+            --vars|-v)
+                basic_var
+                ;;
+            --arrays|-a)
+                basic_array
+                ;;
+            --cond|-c)
+                basic_conditionals
+                ;;
+            *)
+                error "Unknown option: $1"
+                printf "Try '%s --help' for more information.\n" "${0##*/}"
+                return "${E_BADARGS}"
+                ;;
+        esac
+    else
+        # Run all examples
+        basic_var
+        basic_array
+        basic_conditionals
+    fi
+
+    return 0
+}
+
+# Execute main function with all arguments
+main "$@"

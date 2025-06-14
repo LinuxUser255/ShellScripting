@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+arr=(a b c d e f g)
+numbers=(1 2 3 4 5 6 7)
+
+cycle() {
+    printf '%s%s\n' "${numbers[${i:=0}]}" "${arr[i]}"
+    ((i=i>=${#arr[@]}-1?0:++i))
+}
+
+echo -e "\n🔁 Press any key to cycle. Press 'q' to quit.\n"
+
+while true; do
+    read -n 1 -s key
+    [[ $key == q ]] && echo -e "\n👋 Exiting..." && break
+    cycle
+done
+

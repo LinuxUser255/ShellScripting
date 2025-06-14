@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+# basic variables
+VAR_ONE=Shell
+VAR_TWO=Scripting
+
+# cattig the vars together
+echo $VAR_ONE $VAR_TWO
+
+
+# TEST OPERATORS: testing for sameness between two things
+# first string val is equal to the second and the other is not
+# Retruns 0 when vals are equal, and 1 when they are not.
+[ foo = foo ]; echo $?; # 0
+[ foo = bar ]; echo $?  # 1
+
+[ 1 = 1 ]; echo $?
+[ 1 = 0 ]; echo $?
+
+[ 1 -eq 1 ]; echo $?
+
+echo ""
+
+# conditional luke smith style
+#[ foo = foo ] && echo $?; # 0
+#[ "$(id -u)" -ne 0 ] && echo "This script must be run as root." && exit 1
+
+# Conditionals - using vaiable brace expansion with double commas:
+# accepts lower and uppercase
+if [ ${1,,} = chris ]; then
+        echo "hello"
+elif [ ${1,,} = help ]; then
+        echo "enter your name"
+else
+    echo "go away"
+fi
+
+
+# case switch
+case ${1,,} in
+    chris | admin) # the pipe | is a separator for multiple options
+        echo "hello admin";
+        ;;
+    help)
+        echo "enter your uname"
+        ;;
+    *)     # the catch all option when none of the options have been met
+        echo "must be admin"
+esac
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

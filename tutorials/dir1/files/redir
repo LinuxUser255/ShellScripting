@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+
+VAR_ONE=Shell
+VAR_TWO=Scripting
+
+echo $VAR_ONE $VAR_TWO
+
+# outputs the list of names sorted in alphebetical order
+# sort < names.txt
+
+# cat <<EOF
+# line 1
+# line 2
+# EOF
+
+#ps -ef | head -n 5 > twentyps.txt
+#cat twentyps.txt
+
+
+
+
+# Input redirection:
+# <  redirects standard input (stdin) from a file.
+# feeds the content of a file as input to a command.
+# Example using the sort comand
+# sort < names.txt
+
+# Here Document  << EOF
+# allows direct multiline input
+# cat <<EOF
+# line 1
+# line 2
+# EOF
+# The quotes around 'EOF' are significant -
+# they prevent Bash from performing variable substitution and command expansion within the heredoc.
+# This means any $variables or $(commands) in the text will be treated as literal text rather than being expanded.
+#
+# Write a multiline message into message.txt
+cat <<EOF > heredoc.txt
+Using heredoc EOF
+to redirect text
+EOF
+
+#ps -ef | head -n 5 > twentyps.txt
+#cat twentyps.txt
+

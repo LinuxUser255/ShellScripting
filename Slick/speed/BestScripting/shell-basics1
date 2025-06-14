@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+
+#!/usr/bin/env bash
+#
+# Shell script demonstrating bash features following pure-bash.md guidelines
+#
+
+# Enable strict mode
+set -euo pipefail
+IFS=$'\n\t'  # Set IFS to newline and tab to avoid issues with spaces in filenames
+
+# Constants - using readonly to prevent accidental modification
+readonly E_BADARGS=85       # Invalid number of arguments
+readonly E_NOTFOUND=127     # File or command not found
+
+# Color definitions for terminal output
+readonly RED='\033[0;31m'    # Used for errors
+readonly GREEN='\033[0;32m'  # Used for success messages
+readonly YELLOW='\033[0;33m' # Used for warnings
+readonly BLUE='\033[0;34m'   # Used for info messages
+readonly NC='\033[0m'        # No Color - resets text formatting
+
+# Helper functions for colorful output
+info() {
+    printf "${BLUE}[INFO]${NC} %s\n" "$1"
+}
+
+success() {
+    printf "${GREEN}[SUCCESS]${NC} %s\n" "$1"
+}
+
+warning() {
+    printf "${YELLOW}[WARNING]${NC} %s\n" "$1"
+}
+
+error() {
+    printf "${RED}[ERROR]${NC} %s\n" "$1" >&2
+}
+
+
+# Script to check if specified systemd services are present and running and output results in a file named 'systemd-output.txt'
+OUTPUT_FILE="systemd-output.txt"
+
+# List of services to check
+SERVICES=(
+    "avahi-daemon"
+    "cups"
+    "rpcbind"
+    "nfs-server"
+    "smbd"
+    "snmpd"
+    "apache2"
+    "mysql"
+    "bind9"
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

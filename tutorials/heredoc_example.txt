@@ -1,0 +1,3 @@
+Writes a multiline
+message into a file
+called heredoc_example.txt
