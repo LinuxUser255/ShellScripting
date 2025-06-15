@@ -1,28 +1,6 @@
 
 
-
-`$()` command
-
- `([[ condition ]] && action) ` conditionals
-
- `${}` brace expansion
-
-`(( ))`: Double parentheses for arithmetic evaluation in bash
-
-
-`${#arr[@]}`: Gets the length of the array:
-
-
-`arr[@]` refers to all elements of the array
-
-`#` operator gets the count of elements
-
-`${#arr[@]}` returns the total number of elements in the array
-
---------------------------------------------------
-
-
-Here is a **comprehensive shell scripting symbol reference chart**, formatted uniformly as you requested:
+# A comprehensive shell scripting symbol reference chart
 
 ---
 
@@ -230,41 +208,5 @@ set -x                  print each command before running it (debug)
 ```
 
 ---
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
