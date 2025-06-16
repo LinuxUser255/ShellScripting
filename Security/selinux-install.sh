@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-#!/bin/bash
 
 # Exit on error
 set -e
@@ -28,7 +27,7 @@ echo "🧹 Scheduling full filesystem relabel on next boot..."
 sudo touch /.autorelabel
 
 # Step 6: Optional - disable AppArmor
-read -p "❓ Disable AppArmor to avoid conflicts? (y/N): " disable_apparmor
+read -r -p "❓ Disable AppArmor to avoid conflicts? (y/N): " disable_apparmor
 if [[ "$disable_apparmor" =~ ^[Yy]$ ]]; then
     echo "🛑 Disabling AppArmor..."
     sudo systemctl disable apparmor
@@ -36,7 +35,7 @@ if [[ "$disable_apparmor" =~ ^[Yy]$ ]]; then
 fi
 
 # Step 7: Prompt for reboot
-read -p "🔁 Reboot now to complete SELinux activation in enforcing mode? (Y/n): " reboot_now
+read -r -p "🔁 Reboot now to complete SELinux activation in enforcing mode? (Y/n): " reboot_now
 if [[ "$reboot_now" =~ ^[Nn]$ ]]; then
     echo "✅ SELinux installed and configured. Please reboot manually to apply changes."
 else
