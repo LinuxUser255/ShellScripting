@@ -7,10 +7,17 @@ process_file_set_a() {
 }
 
 # Function to process files with the second ripgrep command
-#process_file_set_b() {
-#    local file_name=$1
-#    rg -o 'NONE|UNSAFE|WEAK|NOT FOUND|DISABLED' "${file_name}.txt" | sort | uniq -c > "${file_name}_b.txt"
-#}
+process_file_set_b() {
+    local file_name=$1
+    rg -o 'NONE|UNSAFE|WEAK|NOT FOUND|DISABLED' "${file_name}.txt" | sort | uniq -c > "${file_name}_b.txt"
+}
+
+# Function to clean the output files
+clean_output() {
+    local file_name=$1
+    sed 's/^[[:space:]]*//; s/-//g; s/://g; s/\[[^]]*\]//g' "${file_name}_a.txt" > "${file_name}_a_clean.txt"
+    sed 's/^[[:space:]]*//; s/-//g; s/://g; s/\[[^]]*\]//g' "${file_name}_b.txt" > "${file_name}_b_clean.txt"
+}
 
 # Main function to execute the processing
 main() {
@@ -24,8 +31,12 @@ main() {
     process_file_set_a "${audit_name}"
     process_file_set_a "${pentest_name}"
 
-#    process_file_set_b "${audit_name}"
-#    process_file_set_b "${pentest_name}"
+    process_file_set_b "${audit_name}"
+    process_file_set_b "${pentest_name}"
+
+    # Clean the output files
+    clean_output "${audit_name}"
+    clean_output "${pentest_name}"
 }
 
 main
