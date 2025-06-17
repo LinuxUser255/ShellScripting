@@ -7,10 +7,10 @@ process_file_set_a() {
 }
 
 # Function to process files with the second ripgrep command
-process_file_set_b() {
-    local file_name=$1
-    rg -o 'NONE|UNSAFE|WEAK|NOT FOUND|DISABLED' "${file_name}.txt" | sort | uniq -c > "${file_name}_b.txt"
-}
+#process_file_set_b() {
+#    local file_name=$1
+#    rg -o 'NONE|UNSAFE|WEAK|NOT FOUND|DISABLED' "${file_name}.txt" | sort | uniq -c > "${file_name}_b.txt"
+#}
 
 # Main function to execute the processing
 main() {
@@ -24,8 +24,8 @@ main() {
     process_file_set_a "${audit_name}"
     process_file_set_a "${pentest_name}"
 
-    process_file_set_b "${audit_name}"
-    process_file_set_b "${pentest_name}"
+#    process_file_set_b "${audit_name}"
+#    process_file_set_b "${pentest_name}"
 }
 
 main
