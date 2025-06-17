@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
 # if this works, integrate it into hardn-main.sh
-
-
 SSH_CONFIG="/etc/ssh/sshd_config"
 
 check_ssh_config() {
@@ -16,6 +14,14 @@ check_ssh_config() {
     else
         echo "[FAIL] $message"
     fi
+}
+
+# Before we start making changes to our configuration, let’s make a backup.
+backup_ssh_config() {
+    local timestamp
+    timestamp=$(date +%Y%m%d%H%M%S)
+    cp "$SSH_CONFIG" "${SSH_CONFIG}.bak.${timestamp}"
+    echo "Backup created: ${SSH_CONFIG}.bak.${timestamp}"
 }
 
 check_ssh_security_settings() {
@@ -32,12 +38,12 @@ check_ssh_security_settings() {
 }
 
 check_ssh_port() {
-    # 4. Change Default SSH Port
-    if grep -qE "^\s*Port\s+22" "$SSH_CONFIG"; then
-        echo "[FAIL] Default SSH port is used (22)"
-    else
-        echo "[PASS] SSH port is changed from default (22)"
-    fi
+    # 4. Change Default SSH Port to 8922
+    check_ssh_config "$SSH_CONFIG" "Port" "8922" "Default SSH port is changed to 8922"
+    # 5. Enable TCP Wrappers
+    check_ssh_config "$SSH_CONFIG" "UsePrivilegeSeparation" "yes" "TCP wrappers are enabled"
+    check_ssh_config "$SSH_CONFIG" "TCPWrapperGroup" "nobody" "TCP wrappers group is set to nobody"
+    check_ssh_config "$SSH_CONFIG" "TCPWrappersFile" "/etc/ssh/tcpwrappers.conf" "TCP wrappers file is set to /etc/ssh/tcpwrappers"
 }
 
 check_user_access_restriction() {
@@ -72,20 +78,24 @@ check_ssh_config "$SSH_CONFIG" "MaxAuthTries" "3" "Login attempts are limited"
 
 check_firewall_settings() {
     # 10. Use a Firewall
-    if ufw status | grep -q "22/tcp"; then
-        echo "[FAIL] Firewall allows SSH on default port (22)"
+    if command -v ufw >/dev/null 2>&1; then
+        if ufw status | grep -q "22/tcp"; then
+            echo "[FAIL] Firewall allows SSH on default port (22)"
+        else
+            echo "[PASS] Firewall does not allow SSH on default port (22)"
+        fi
     else
-        echo "[PASS] Firewall does not allow SSH on default port (22)"
+        echo "[INFO] UFW is not installed. Skipping firewall check."
     fi
     check_ssh_config "$SSH_CONFIG" "LogLevel" "VERBOSE" "Logging level is set to VERBOSE"
 }
 
 check_fail2ban_status() {
     # 12. Use Fail2Ban
-    if systemctl is-active --quiet fail2ban; then
+    if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet fail2ban; then
         echo "[PASS] Fail2Ban is active"
     else
-        echo "[FAIL] Fail2Ban is not active"
+        echo "[FAIL] Fail2Ban is not active or systemctl is not available"
     fi
 }
 
@@ -101,7 +111,8 @@ echo "SSH Security Check Completed."
 
 main() {
  # call the function to perform the checks
- check_ssh_security_settings
+   check_ssh_security_settings
+   backup_ssh_config
    check_ssh_port
    check_user_access_restriction
    check_two_factor_authentication
