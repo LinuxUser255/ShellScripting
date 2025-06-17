@@ -1,35 +1,50 @@
 #!/usr/bin/env bash
 
- # Run comprehensive Lynis audit
+# Check if Lynis is installed
+if ! command -v lynis &> /dev/null; then
+    echo "Lynis is not installed. Please install it and try again."
+    exit 1
+fi
 
-read -r -p "Enter the system audit audit name: " audit_name
+# Initialize report numbers
+audit_number=1
+pentest_number=1
+
+# Prompt for audit and pentest names
+read -r -p "Enter the system audit name: " audit_name
 echo " "
-read -r -p "Enter the system pentest audit name: " pentest_name
+read -r -p "Enter the system pentest name: " pentest_name
 
-run_audit(){
-  # append a .txt file to the audit name, and increment the audit number each time the audit is run
-  # if the audit number is not provided, start at 1,then check if the file already exists each time the audit is run
-    lynis audit system --verbose --log-file /var/log/lynis/hardn-audit.log --audit-file /var/log/lynis/hardn-audit.dat 2>/dev/null > "${audit_name}_${audit_number}.txt"
+# Function to generate report
+generate_report() {
+    local name="$1"
+    local number="$2"
+    local type="$3"
+    local log_file="$4"
+    local report_file="${name}_${number}.txt"
+
+    lynis audit system $type --verbose --log-file "$log_file" 2>/dev/null > "$report_file"
+    echo "Report generated: $report_file"
+}
+
+# Run comprehensive Lynis audit
+run_audit() {
+    generate_report "$audit_name" "$audit_number" "" "/var/log/lynis/hardn-audit.log"
     audit_number=$((audit_number+1))
-    echo "Report generated: ${audit_name}_${audit_number}.txt"
-    #${audit_name}_${audit_number}.txt
 }
 
-wait(){
-  # wait 5 seconds before running the next function
-  sleep 5
+# Wait function to pause execution
+pause_execution() {
+    sleep 5
 }
 
- # Run Lynis with pentest profile for additional checks
- run_pentest(){
-  # append a .txt file to the audit name, and increment the audit number each time the audit is run
-    lynis audit system --pentest --verbose --log-file /var/log/lynis/hardn-pentest.log 2>/dev/null > "${pentest_name}_${audit_number}.txt"
+# Run Lynis with pentest profile for additional checks
+run_pentest() {
+    generate_report "$pentest_name" "$pentest_number" "--pentest" "/var/log/lynis/hardn-pentest.log"
     pentest_number=$((pentest_number+1))
-    echo "Pentest audit generated: ${pentest_name}_${pentest_number}.txt"
-    #${pentest_name}_${pentest_number}.txt
 }
 
-# call the functions
+# Call the functions
 run_audit
-wait
+pause_execution
 run_pentest
