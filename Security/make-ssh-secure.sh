@@ -1,7 +1,24 @@
 #!/usr/bin/env bash
 
-# if this works, integrate it into hardn-main.sh
 SSH_CONFIG="/etc/ssh/sshd_config"
+
+apply_ssh_config() {
+    local setting="$1"
+    local value="$2"
+
+    if grep -qE "^\s*${setting}\s+" "$SSH_CONFIG"; then
+        sed -i "s/^\s*${setting}\s+.*/${setting} ${value}/" "$SSH_CONFIG"
+    else
+        echo "${setting} ${value}" >> "$SSH_CONFIG"
+    fi
+}
+
+backup_ssh_config() {
+    local timestamp
+    timestamp=$(date +%Y%m%d%H%M%S)
+    cp "$SSH_CONFIG" "${SSH_CONFIG}.bak.${timestamp}"
+    echo "Backup created: ${SSH_CONFIG}.bak.${timestamp}"
+}
 
 check_ssh_config() {
     local config="$1"
@@ -14,14 +31,6 @@ check_ssh_config() {
     else
         echo "[FAIL] $message"
     fi
-}
-
-# Before we start making changes to our configuration, let’s make a backup.
-backup_ssh_config() {
-    local timestamp
-    timestamp=$(date +%Y%m%d%H%M%S)
-    cp "$SSH_CONFIG" "${SSH_CONFIG}.bak.${timestamp}"
-    echo "Backup created: ${SSH_CONFIG}.bak.${timestamp}"
 }
 
 check_ssh_security_settings() {
@@ -43,7 +52,7 @@ check_ssh_port() {
     # 5. Enable TCP Wrappers
     check_ssh_config "$SSH_CONFIG" "UsePrivilegeSeparation" "yes" "TCP wrappers are enabled"
     check_ssh_config "$SSH_CONFIG" "TCPWrapperGroup" "nobody" "TCP wrappers group is set to nobody"
-    check_ssh_config "$SSH_CONFIG" "TCPWrappersFile" "/etc/ssh/tcpwrappers.conf" "TCP wrappers file is set to /etc/ssh/tcpwrappers"
+    check_ssh_config "$SSH_CONFIG" "TCPWrappersFile" "/etc/ssh/tcpwrappers" "TCP wrappers file is set to /etc/ssh/tcpwrappers"
 }
 
 check_user_access_restriction() {
@@ -107,19 +116,81 @@ check_unused_features() {
     check_ssh_config "$SSH_CONFIG" "X11Forwarding" "no" "X11 forwarding is disabled"
     check_ssh_config "$SSH_CONFIG" "AllowTcpForwarding" "no" "TCP forwarding is disabled"
 }
-echo "SSH Security Check Completed."
+
+apply_ssh_security_settings() {
+    echo "Applying SSH Security Settings..."
+
+    # 1. Disable Password Authentication
+    apply_ssh_config "PasswordAuthentication" "no"
+
+    # 2. Enable Public Key Authentication
+    apply_ssh_config "PubkeyAuthentication" "yes"
+
+    # 3. Disable Root Login
+    apply_ssh_config "PermitRootLogin" "no"
+}
+
+apply_ssh_port() {
+    # 4. Change Default SSH Port to 8922
+    apply_ssh_config "Port" "8922"
+}
+
+apply_user_access_restriction() {
+    # 5. Restrict User Access
+    if ! grep -qE "^\s*AllowUsers" "$SSH_CONFIG"; then
+        echo "AllowUsers your_user" >> "$SSH_CONFIG"
+    fi
+}
+
+apply_protocol_version() {
+    # 6. Use SSH Protocol 2
+    apply_ssh_config "Protocol" "2"
+}
+
+apply_two_factor_authentication() {
+    # 7. Enable Two-Factor Authentication (2FA)
+    if ! grep -qE "^\s*AuthenticationMethods" "$SSH_CONFIG"; then
+        echo "AuthenticationMethods publickey,keyboard-interactive" >> "$SSH_CONFIG"
+    fi
+}
+
+apply_idle_timeout_interval() {
+    # 8. Configure Idle Timeout Interval
+    apply_ssh_config "ClientAliveInterval" "300"
+    apply_ssh_config "ClientAliveCountMax" "0"
+}
+
+apply_login_attempts_limit() {
+    # 9. Limit Login Attempts
+    apply_ssh_config "MaxAuthTries" "3"
+}
+
+apply_unused_features() {
+    # 14. Disable Unused Features
+    apply_ssh_config "X11Forwarding" "no"
+    apply_ssh_config "AllowTcpForwarding" "no"
+}
+
+restart_ssh_service() {
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl restart sshd
+    else
+        service ssh restart
+    fi
+}
 
 main() {
- # call the function to perform the checks
-   check_ssh_security_settings
-   backup_ssh_config
-   check_ssh_port
-   check_user_access_restriction
-   check_two_factor_authentication
-   check_idle_timeout_interval
-   check_fail2ban_status
-   check_firewall_settings
-   check_unused_features
+    backup_ssh_config
+    apply_ssh_security_settings
+    apply_ssh_port
+    apply_user_access_restriction
+    apply_protocol_version
+    apply_two_factor_authentication
+    apply_idle_timeout_interval
+    apply_login_attempts_limit
+    apply_unused_features
+    restart_ssh_service
+    echo "SSH configuration applied and service restarted."
 }
 
 main
