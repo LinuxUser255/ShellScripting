@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Exit on error, undefined variable, and prevent errors in pipes from being masked
+set -euo pipefail
+
 SSH_CONFIG="/etc/ssh/sshd_config"
 
 apply_ssh_config() {
@@ -36,10 +39,10 @@ check_ssh_config() {
 check_ssh_security_settings() {
     echo "Checking SSH Security Settings..."
 
-    # 1. Disable Password Authentication
+    # 1. Disable Passwd auth
     check_ssh_config "$SSH_CONFIG" "PasswordAuthentication" "no" "Password authentication is disabled"
 
-    # 2. Enable Public Key Authentication
+    # 2. Enable Public Key Auth
     check_ssh_config "$SSH_CONFIG" "PubkeyAuthentication" "yes" "Public key authentication is enabled"
 
     # 3. Disable Root Login
@@ -47,8 +50,9 @@ check_ssh_security_settings() {
 }
 
 check_ssh_port() {
-    # 4. Change Default SSH Port to 8922
-    check_ssh_config "$SSH_CONFIG" "Port" "8922" "Default SSH port is changed to 8922"
+    # 4. Change Default SSH Port to 8022
+    check_ssh_config "$SSH_CONFIG" "Port" "8022" "Default SSH port is changed to 8922"
+
     # 5. Enable TCP Wrappers
     check_ssh_config "$SSH_CONFIG" "UsePrivilegeSeparation" "yes" "TCP wrappers are enabled"
     check_ssh_config "$SSH_CONFIG" "TCPWrapperGroup" "nobody" "TCP wrappers group is set to nobody"
@@ -64,8 +68,10 @@ check_user_access_restriction() {
     fi
 }
 
-# 6. Use SSH Protocol 2
-check_ssh_config "$SSH_CONFIG" "Protocol" "2" "SSH Protocol 2 is used"
+check_protocol_version() {
+    # 6. Use SSH Protocol 2
+    check_ssh_config "$SSH_CONFIG" "Protocol" "2" "SSH Protocol 2 is used"
+}
 
 check_two_factor_authentication() {
     # 7. Enable Two-Factor Authentication (2FA)
@@ -82,12 +88,14 @@ check_idle_timeout_interval() {
     check_ssh_config "$SSH_CONFIG" "ClientAliveCountMax" "0" "Idle timeout count max is set"
 }
 
-# 9. Limit Login Attempts
-check_ssh_config "$SSH_CONFIG" "MaxAuthTries" "3" "Login attempts are limited"
+check_login_attempts() {
+    # 9. Limit Login Attempts
+    check_ssh_config "$SSH_CONFIG" "MaxAuthTries" "3" "Login attempts are limited"
+}
 
 check_firewall_settings() {
     # 10. Use a Firewall
-    if command -v ufw >/dev/null 2>&1; then
+    if command -v ufw &>/dev/null; then
         if ufw status | grep -q "22/tcp"; then
             echo "[FAIL] Firewall allows SSH on default port (22)"
         else
@@ -96,20 +104,18 @@ check_firewall_settings() {
     else
         echo "[INFO] UFW is not installed. Skipping firewall check."
     fi
+
     check_ssh_config "$SSH_CONFIG" "LogLevel" "VERBOSE" "Logging level is set to VERBOSE"
 }
 
 check_fail2ban_status() {
     # 12. Use Fail2Ban
-    if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet fail2ban; then
+    if command -v systemctl &>/dev/null && systemctl is-active --quiet fail2ban; then
         echo "[PASS] Fail2Ban is active"
     else
         echo "[FAIL] Fail2Ban is not active or systemctl is not available"
     fi
 }
-
-# 13. Keep SSH and System Updated
-echo "[INFO] Ensure your system and SSH are regularly updated"
 
 check_unused_features() {
     # 14. Disable Unused Features
@@ -172,25 +178,64 @@ apply_unused_features() {
 }
 
 restart_ssh_service() {
-    if command -v systemctl >/dev/null 2>&1; then
+    if command -v systemctl &>/dev/null; then
         systemctl restart sshd
     else
         service ssh restart
     fi
 }
 
-main() {
-    backup_ssh_config
-    apply_ssh_security_settings
-    apply_ssh_port
-    apply_user_access_restriction
-    apply_protocol_version
-    apply_two_factor_authentication
-    apply_idle_timeout_interval
-    apply_login_attempts_limit
-    apply_unused_features
-    restart_ssh_service
-    echo "SSH configuration applied and service restarted."
+check_all_settings() {
+    check_ssh_security_settings
+    check_ssh_port
+    check_user_access_restriction
+    check_protocol_version
+    check_two_factor_authentication
+    check_idle_timeout_interval
+    check_login_attempts
+    check_firewall_settings
+    check_fail2ban_status
+    echo "[INFO] Ensure your system and SSH are regularly updated"
+    check_unused_features
 }
 
-main
+main() {
+    # Check if running as root
+    if [[ $EUID -ne 0 ]]; then
+        echo "This script must be run as root" >&2
+        exit 1
+    fi
+
+    # Check if SSH config exists
+    if [[ ! -f "$SSH_CONFIG" ]]; then
+        echo "SSH config file not found: $SSH_CONFIG" >&2
+        exit 1
+    }
+
+    # Parse command line arguments
+    case "${1:-apply}" in
+        check)
+            check_all_settings
+            ;;
+        apply)
+            backup_ssh_config
+            apply_ssh_security_settings
+            apply_ssh_port
+            apply_user_access_restriction
+            apply_protocol_version
+            apply_two_factor_authentication
+            apply_idle_timeout_interval
+            apply_login_attempts_limit
+            apply_unused_features
+            restart_ssh_service
+            echo "SSH configuration applied and service restarted."
+            ;;
+        *)
+            echo "Usage: $0 [check|apply]" >&2
+            exit 1
+            ;;
+    esac
+}
+
+# Execute main function with all arguments
+main "$@"

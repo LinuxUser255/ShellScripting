@@ -1,8 +1,13 @@
-# Configured according to lynis security
-# This is the sshd server system-wide configuration file.  See
-# sshd_config(5) for more information.
+# This is the sshd server system-wide configuration file.
+# This is the configuration we shall use for HARDN-XDR
+# Much of the settings in this file are from.
+# https://linux-audit.com/ssh/audit-and-harden-your-ssh-configuration/
+# And they are set as the result of much lynis testing.
+# It is Configured according to lynis security testing
+# This is the configuration file that will be implemented as part of
+# HARDN-XDR
+# All the uncommented lines are self-explanatory
 
-# This sshd was compiled with PATH=/usr/local/bin:/usr/bin:/bin:/usr/games
 
 # The strategy used for options in the default sshd_config shipped with
 # OpenSSH is to specify options with their default value where
@@ -11,6 +16,8 @@
 
 Include /etc/ssh/sshd_config.d/*.conf
 
+# Use an unconventional port number for ssh.
+# Protects against brute force attacks that seek port 22
 Port 8022
 #AddressFamily any
 #ListenAddress 0.0.0.0
@@ -28,7 +35,6 @@ Port 8022
 LogLevel VERBOSE
 
 # Authentication:
-
 LoginGraceTime 60
 PermitRootLogin prohibit-password
 StrictModes yes
