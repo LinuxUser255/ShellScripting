@@ -18,9 +18,12 @@ harden_ssh_config() {
         printf "\e[1;31mHardening SSH configuration...\e[0m\n"
 
         # Define paths
-        local custom_config="${SCRIPT_DIR}/../../sshd_config"
+        # the custom sshd_config is in the same directory as hardn-ssh.sh
+        local custom_config="sshd_config"
+        # the original sshd_config is located in /etc/ssh/sshd_config
         local system_config="/etc/ssh/sshd_config"
-        local backup_config="/etc/ssh/sshd_config.bak.$(date +%Y%m%d%H%M%S)"
+        local backup_config
+        backup_config="/etc/ssh/sshd_config.bak.$(date +%Y%m%d%H%M%S)"
 
         # Check if custom config exists
         if [ ! -f "$custom_config" ]; then
