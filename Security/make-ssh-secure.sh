@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+
+# Goal, implement the features of the sshd_config into this script.
+# This script should be able to convert the normal sshd_config into
+# the one in this directory.
+# import sshd_config
+
+
 # Exit on error, undefined variable, and prevent errors in pipes from being masked
 set -euo pipefail
 
