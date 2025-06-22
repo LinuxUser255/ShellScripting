@@ -1,3 +1,5 @@
+# THIS IS THE SECURITY HARDNED CUSTOM SSHD_CONFIG
+#########################################################
 # This is the sshd server system-wide configuration file.
 # This is the configuration we shall use for HARDN-XDR
 # Much of the settings in this file are from.
