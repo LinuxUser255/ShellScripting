@@ -104,7 +104,7 @@ Let me know if you'd like a mini-practice set or script to help you get fluent w
 
 
 
-Absolutely! Here's a **mini-practice set** and a **hands-on Bash script** to help you get fluent with:
+Here's a **mini-practice set** and a **hands-on Bash script** to help you get fluent with:
 
 * **Globbing** (e.g., `*.c`)
 * **Bash parameter expansion** (`${var%.ext}` and friends)
