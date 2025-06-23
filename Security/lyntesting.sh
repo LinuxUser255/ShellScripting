@@ -23,6 +23,13 @@ generate_report() {
     local log_file="$4"
     local report_file="${name}_${number}.txt"
 
+    # give local user ownership to the report file
+    sudo chown "$USER" "$report_file"
+
+    # Run Lynis and generate the report with verbose output and log file
+    echo "Running Lynis $type audit..."
+    echo "Log file: $log_file"
+    echo "Report file: $report_file"
     lynis audit system $type --verbose --log-file "$log_file" 2>/dev/null > "$report_file"
     echo "Report generated: $report_file"
 }
