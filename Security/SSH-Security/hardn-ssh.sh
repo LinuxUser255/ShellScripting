@@ -35,8 +35,8 @@ ensure_ssh_prerequisites() {
         # Check if OpenSSH server is installed
         if ! command -v sshd >/dev/null 2>&1; then
             printf "\e[1;31mOpenSSH server is not installed. Installing...\e[0m\n"
-            apt-get update && apt-get install -y openssh-server
-            if [ $? -ne 0 ]; then
+            apt update && apt install -y openssh-server
+            if [ ! $? -ne 0 ]; then
                 printf "\e[1;31mFailed to install OpenSSH server. Aborting.\e[0m\n"
                 return 1
             fi
@@ -48,24 +48,21 @@ ensure_ssh_prerequisites() {
 harden_ssh_config() {
         printf "\e[1;31mHardening SSH configuration...\e[0m\n"
 
-        # Ensure SSH prerequisites are met
-        ensure_ssh_prerequisites
-        if [ $? -ne 0 ]; then
-            printf "\e[1;31mFailed to meet SSH prerequisites. Aborting.\e[0m\n"
+        # Define paths
+        local system_config="/etc/ssh/sshd_config"
+        local backup_config
+        backup_config="/etc/ssh/sshd_config.bak.$(date +%Y%m%d%H%M%S)"
+        local temp_config="/tmp/sshd_config.new"
+
+        # Backup original config sshd_config
+        if ! cp "${system_config}" "${backup_config}"; then
+            printf "\e[1;31mFailed to create backup of SSH config. Aborting.\e[0m\n"
             return 1
         fi
+        printf "\e[1;32mBackup created at %s\e[0m\n" "${backup_config}"
 
-        # Define paths
-        local custom_config="${SCRIPT_DIR}/../../sshd_config"
-        local system_config="/etc/ssh/sshd_config"
-        local backup_config="/etc/ssh/sshd_config.bak.$(date +%Y%m%d%H%M%S)"
-
-        # backup original config sshd_config
-        cp ${system_config} ${backup_config}
-
-        # Create custom config
-        # EOF this new custom config and give it the name 'sshd_config'
-        cat /etc/ssh/sshd_config << 'EOF'
+        # Create custom config in a temporary file first
+        cat > "${temp_config}" << 'EOF'
 ###################################################
 # THIS IS THE SECURITY HARDNED CUSTOM SSHD_CONFIG #
 ###################################################
@@ -199,10 +196,50 @@ Subsystem	sftp	/usr/lib/openssh/sftp-server
 #	PermitTTY no
 #	ForceCommand cvs server
 #   MaxSessions 4
-
 EOF
 
+        # Validate the new configuration
+        printf "\e[1;32mValidating new SSH configuration...\e[0m\n"
+        if ! sshd -t -f "${temp_config}"; then
+            printf "\e[1;31mNew SSH configuration is invalid. Keeping original configuration.\e[0m\n"
+            rm -f "${temp_config}"
+            return 1
+        fi
+
+        # Apply the new configuration
+        printf "\e[1;32mApplying new SSH configuration...\e[0m\n"
+        if ! cp "${temp_config}" "${system_config}"; then
+            printf "\e[1;31mFailed to apply new SSH configuration. Keeping original configuration.\e[0m\n"
+            rm -f "${temp_config}"
+            return 1
+        fi
+
+        # Clean up temporary file
+        rm -f "${temp_config}"
+
+        # Restart SSH service
+        printf "\e[1;32mRestarting SSH service...\e[0m\n"
+        if ! systemctl restart ssh; then
+            printf "\e[1;31mFailed to restart SSH service. Rolling back to original configuration...\e[0m\n"
+            cp "${backup_config}" "${system_config}"
+            systemctl restart ssh
+            return 1
+        fi
+
+        # Verify SSH service is running
+        if ! systemctl is-active --quiet ssh; then
+            printf "\e[1;31mSSH service failed to start. Rolling back to original configuration...\e[0m\n"
+            cp "${backup_config}" "${system_config}"
+            systemctl restart ssh
+            return 1
+        fi
+
+        printf "\e[1;32mSSH configuration hardened successfully!\e[0m\n"
+        printf "\e[1;32mNOTE: SSH is now configured to use port 8022 instead of the default port 22.\e[0m\n"
+        printf "\e[1;32mNOTE: Password authentication is disabled. Make sure you have SSH keys set up.\e[0m\n"
+        return 0
 }
+
 
 main(){
         check_user
