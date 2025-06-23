@@ -1,17 +1,8 @@
 
-###################################################
-# THIS IS THE SECURITY HARDNED CUSTOM SSHD_CONFIG #
-###################################################
-# This is the sshd server system-wide configuration file.
-# This is the configuration we shall use for HARDN-XDR
-# Much of the settings in this file are from.
-# https://linux-audit.com/ssh/audit-and-harden-your-ssh-configuration/
-# And they are set as the result of much lynis testing.
-# It is Configured according to lynis security testing
-# This is the configuration file that will be implemented as part of
-# HARDN-XDR
-# All the uncommented lines are self-explanatory
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
 
+# This sshd was compiled with PATH=/usr/local/bin:/usr/bin:/bin:/usr/games
 
 # The strategy used for options in the default sshd_config shipped with
 # OpenSSH is to specify options with their default value where
@@ -20,9 +11,7 @@
 
 Include /etc/ssh/sshd_config.d/*.conf
 
-# Use an unconventional port number for ssh.
-# Protects against brute force attacks that seek port 22
-Port 8022
+#Port 22
 #AddressFamily any
 #ListenAddress 0.0.0.0
 #ListenAddress ::
@@ -36,23 +25,24 @@ Port 8022
 
 # Logging
 #SyslogFacility AUTH
-LogLevel VERBOSE
+#LogLevel INFO
 
 # Authentication:
-LoginGraceTime 60
-PermitRootLogin prohibit-password
-StrictModes yes
-MaxAuthTries 3
-MaxSessions 4
 
-PubkeyAuthentication yes
+#LoginGraceTime 2m
+#PermitRootLogin prohibit-password
+#StrictModes yes
+#MaxAuthTries 6
+#MaxSessions 10
+
+#PubkeyAuthentication yes
 
 # Expect .ssh/authorized_keys2 to be disregarded by default in future.
-AuthorizedKeysFile	.ssh/authorized_keys .ssh/authorized_keys2
+#AuthorizedKeysFile	.ssh/authorized_keys .ssh/authorized_keys2
 
 #AuthorizedPrincipalsFile none
 
-#AuthorizedKeysCommand none/
+#AuthorizedKeysCommand none
 #AuthorizedKeysCommandUser nobody
 
 # For this to work you will also need host keys in /etc/ssh/ssh_known_hosts
@@ -61,11 +51,11 @@ AuthorizedKeysFile	.ssh/authorized_keys .ssh/authorized_keys2
 # HostbasedAuthentication
 #IgnoreUserKnownHosts no
 # Don't read the user's ~/.rhosts and ~/.shosts files
-IgnoreRhosts yes
+#IgnoreRhosts yes
 
 # To disable tunneled clear text passwords, change to no here!
-PasswordAuthentication no
-PermitEmptyPasswords no
+#PasswordAuthentication yes
+#PermitEmptyPasswords no
 
 # Change to yes to enable challenge-response passwords (beware issues with
 # some PAM modules and threads)
@@ -94,23 +84,23 @@ KbdInteractiveAuthentication no
 # and KbdInteractiveAuthentication to 'no'.
 UsePAM yes
 
-AllowAgentForwarding no
+#AllowAgentForwarding yes
 #AllowTcpForwarding yes
 #GatewayPorts no
-X11Forwarding no
+X11Forwarding yes
 #X11DisplayOffset 10
 #X11UseLocalhost yes
 #PermitTTY yes
 PrintMotd no
 #PrintLastLog yes
-TCPKeepAlive no
+#TCPKeepAlive yes
 #PermitUserEnvironment no
 #Compression delayed
-ClientAliveInterval 300
-ClientAliveCountMax 0
-UseDNS no
+#ClientAliveInterval 0
+#ClientAliveCountMax 3
+#UseDNS no
 #PidFile /run/sshd.pid
-MaxStartups 10:30:60
+#MaxStartups 10:30:100
 #PermitTunnel no
 #ChrootDirectory none
 #VersionAddendum none
@@ -130,5 +120,3 @@ Subsystem	sftp	/usr/lib/openssh/sftp-server
 #	AllowTcpForwarding no
 #	PermitTTY no
 #	ForceCommand cvs server
-#   MaxSessions 4
-

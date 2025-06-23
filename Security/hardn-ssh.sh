@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+
+
 # This function is to be implemented into hardn-main.sh
 
 # ABOUT the function
@@ -14,59 +17,104 @@
 # 4. Clear logging of what's happening
 
 
-harden_ssh_config() {
-        printf "\e[1;31mHardening SSH configuration...\e[0m\n"
+# Color definitions
+RED="\e[1;31m"
+GREEN="\e[1;32m"
+YELLOW="\e[1;33m"
+BLUE="\e[1;34m"
+RESET="\e[0m"
+
+# Logging functions using shorter function declaration
+log_info(){
+        printf "${BLUE}[INFO]${RESET} %s\n" "$1"
+}
+
+log_success(){
+        printf "${GREEN}[SUCCESS]${RESET} %s\n" "$1"
+}
+
+log_warning(){
+        printf "${YELLOW}[WARNING]${RESET} %s\n" "$1"
+}
+
+log_error(){
+        printf "${RED}[ERROR]${RESET} %s\n" "$1"
+}
+
+harden_ssh_config(){
+        log_info "Hardening SSH configuration..."
 
         # Define paths
-        # the custom sshd_config is in the same directory as hardn-ssh.sh
         local custom_config="sshd_config"
-        # the original sshd_config is located in /etc/ssh/sshd_config
         local system_config="/etc/ssh/sshd_config"
         local backup_config
         backup_config="/etc/ssh/sshd_config.bak.$(date +%Y%m%d%H%M%S)"
 
+        # Check if running as root using shorter if syntax
+        [[ $EUID -ne 0 ]] && {
+                log_error "This function must be run as root"
+                return 1
+        }
+
         # Check if custom config exists
-        if [ ! -f "$custom_config" ]; then
-            printf "\e[1;31mError: Custom SSH config not found at %s\e[0m\n" "$custom_config"
-            return 1
-        fi
+        [[ ! -f "${custom_config}" ]] && {
+                log_error "Custom SSH config not found at ${custom_config}"
+                return 1
+        }
 
         # Create backup
-        if ! cp "$system_config" "$backup_config"; then
-            printf "\e[1;31mError: Failed to create backup of SSH config\e[0m\n"
-            return 1
+        log_info "Creating backup of current SSH configuration..."
+        if cp "${system_config}" "${backup_config}"; then
+                log_success "Original SSH config backed up to ${backup_config}"
+        else
+                log_error "Failed to create backup of SSH config"
+                return 1
         fi
-        printf "\e[1;31mOriginal SSH config backed up to %s\e[0m\n" "$backup_config"
 
         # Copy custom config
-        if ! cp "$custom_config" "$system_config"; then
-            printf "\e[1;31mError: Failed to install custom SSH config\e[0m\n"
-            return 1
+        log_info "Installing custom SSH configuration..."
+        if cp "${custom_config}" "${system_config}"; then
+                : # No-op, continue execution
+        else
+                log_error "Failed to install custom SSH config"
+                return 1
         fi
 
         # Set proper permissions
-        chmod 644 "$system_config"
-        chown root:root "$system_config"
+        log_info "Setting proper file permissions..."
+        chmod 644 "${system_config}"
+        chown root:root "${system_config}"
 
         # Validate config before restarting
+        log_info "Validating SSH configuration..."
         if ! sshd -t; then
-            printf "\e[1;31mError: Invalid SSH configuration detected. Reverting changes...\e[0m\n"
-            cp "$backup_config" "$system_config"
-            return 1
+                log_error "Invalid SSH configuration detected. Reverting changes..."
+                cp "${backup_config}" "${system_config}"
+                return 1
         fi
 
         # Restart SSH service
+        log_info "Restarting SSH service..."
         if systemctl restart sshd; then
-            printf "\e[1;31mSSH configuration hardened successfully.\e[0m\n"
+                log_success "SSH configuration hardened successfully."
         else
-            printf "\e[1;31mError: Failed to restart SSH service. Reverting changes...\e[0m\n"
-            cp "$backup_config" "$system_config"
-            systemctl restart sshd
-            return 1
+                log_error "Failed to restart SSH service. Reverting changes..."
+                cp "${backup_config}" "${system_config}"
+                systemctl restart sshd
+                return 1
         fi
 
-  return 0
+        return 0
 }
 
-# Call the function in the main script
-harden_ssh_config
+# Execute the function if script is run directly (not sourced)
+[[ "${BASH_SOURCE[0]}" == "${0}" ]] && {
+        # Check if running as root
+        [[ $EUID -ne 0 ]] && {
+                printf "%s[ERROR]%s This script must be run as root\n" "${RED}" "${RESET}"
+                echo "Try: sudo $0"
+                exit 1
+        }
+
+        harden_ssh_config
+}
