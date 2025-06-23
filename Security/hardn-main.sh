@@ -1822,11 +1822,6 @@ apply_kernel_security() {
     HARDN_STATUS "pass" "Kernel hardening applied successfully."
 }
 
-
-apply_kernel_security() {
-    # ... existing function content ...
-}
-
 # Function to ensure SSH prerequisites are met
 ensure_ssh_prerequisites() {
     HARDN_STATUS "info" "Checking SSH prerequisites..."
