@@ -1,4 +1,3 @@
-# Title
 
 To copy the file `pure-bash.md` into the directory `test-scripts`, the best `cp` command is:
 
@@ -44,5 +43,4 @@ Example:
 cp -vip pure-bash.md test-scripts/
 ```
 
-Let me know if you want to rename the file as you copy or copy multiple files!
 

@@ -1,4 +1,3 @@
-Absolutely! Here's a **mini-practice set** and a **hands-on Bash script** to help you get fluent with:
 
 * **Globbing** (e.g., `*.c`)
 * **Bash parameter expansion** (`${var%.ext}` and friends)
@@ -119,5 +118,4 @@ done
 
 ---
 
-Let me know if you'd like the same kind of hands-on practice for `awk`, `sed`, or `cut`, or how to incorporate this into a Makefile!
 

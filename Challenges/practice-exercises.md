@@ -1,9 +1,6 @@
 
 # Various Shell Scripting explanations & lessons
 
-
-
-
 ---
 
 ### 🧠 Line 1: `for file in *.c; do`
@@ -353,5 +350,4 @@ make clean     # cleanup task
 
 ---
 
-Let me know if you'd like a project-based challenge next (e.g. process log files, scan system users, or transform CSV reports)!
 

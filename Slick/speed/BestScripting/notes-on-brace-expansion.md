@@ -93,7 +93,6 @@ file="lesson.c"
 output="${file%.c}"   # removes `.c`, becomes "lesson"
 ```
 
-This way, you can name the output file after the source file.
 
 ---
 
