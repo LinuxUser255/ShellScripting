@@ -1,62 +1,93 @@
 #!/usr/bin/env bash
 
-#To install **VirtualBox Guest Additions** on your **Debian VM**, follow this **step-by-step guide**.
-# These additions improve integration with the host, including shared clipboard, drag & drop, shared folders, and screen resizing.
 
-### ✅ Step-by-Step: Install Guest Additions on Debian VM
+set -e  # Exit immediately on any error
 
-#> 🖥️ These instructions assume you're using **VirtualBox** and running **Debian 12 or similar** as the guest OS.
+#-------------------------------
+# Function: Update and upgrade system
+#-------------------------------
+update_system() {
+    echo "🔄 Updating system packages..."
+    sudo apt update && sudo apt upgrade -y
+}
 
-# 🔹 1. Update Your System
+#-------------------------------
+# Function: Install required build tools
+#-------------------------------
+install_dependencies() {
+    echo "🧱 Installing build tools and kernel headers..."
+    sudo apt install -y build-essential dkms linux-headers-"$(uname -r)"
+}
 
-sudo apt update && sudo apt upgrade -y
+#-------------------------------
+# Function: Mount Guest Additions CD
+#-------------------------------
+mount_guest_additions_iso() {
+    echo "💿 Attempting to mount Guest Additions CD..."
+    if [ ! -d /mnt ]; then
+        sudo mkdir /mnt
+    fi
 
+    if mount | grep -q "/mnt"; then
+        echo "✅ ISO already mounted at /mnt."
+    else
+        sudo mount /dev/cdrom /mnt || {
+            echo "❌ Failed to mount /dev/cdrom. Make sure the Guest Additions ISO is inserted from VirtualBox menu: Devices → Insert Guest Additions CD image..."
+            exit 1
+        }
+    fi
+}
 
-# 🔹 2. Install Required Packages
-# These are needed to build the Guest Additions kernel modules:
-sudo apt install -y build-essential dkms linux-headers-"$(uname -r)"
+#-------------------------------
+# Function: Run the Guest Additions installer
+#-------------------------------
+run_guest_additions_installer() {
+    echo "🚀 Running VBoxLinuxAdditions.run installer..."
+    if [ -f /mnt/VBoxLinuxAdditions.run ]; then
+        sudo sh /mnt/VBoxLinuxAdditions.run || {
+            echo "❌ Guest Additions installer failed."
+            exit 1
+        }
+    else
+        echo "❌ VBoxLinuxAdditions.run not found. Make sure the ISO is mounted correctly."
+        exit 1
+    fi
+}
 
+#-------------------------------
+# Function: Confirm installation
+#-------------------------------
+verify_installation() {
+    echo "🧪 Verifying Guest Additions installation..."
+    lsmod | grep -i vbox || echo "⚠️ Kernel module 'vbox*' not found — may require reboot or indicate an issue."
+    pgrep VBox || echo "⚠️ VBox processes not found — check manually after reboot."
+}
 
-# 🔹 3. Insert the Guest Additions ISO
-#1. In VirtualBox menu:
-#   Go to `Devices` → `Insert Guest Additions CD image...`
-#
-#2. Mount the CD (if it doesn't auto-mount):
-sudo mount /dev/cdrom /mnt
+#-------------------------------
+# Function: Reboot the system
+#-------------------------------
+reboot_system() {
+    read -rp "🔁 Reboot now to apply Guest Additions? [Y/n]: " response
+    if [[ "$response" =~ ^[Yy]$ || -z "$response" ]]; then
+        echo "Rebooting..."
+        sudo reboot
+    else
+        echo "ℹ️ Reboot skipped. Guest Additions may not fully work until next reboot."
+    fi
+}
 
+#-------------------------------
+# Main Function
+#-------------------------------
+main() {
+    update_system
+    install_dependencies
+    mount_guest_additions_iso
+    run_guest_additions_installer
+    verify_installation
+    reboot_system
+}
 
-# 🔹 4. Run the Guest Additions Installer
-sudo /mnt/VBoxLinuxAdditions.run
+# Execute main
+main
 
-#Watch for messages about success or errors.
-
-# 🔹 5. Reboot
-
-sudo reboot
-
-
-# ✅ Confirm Installation
-#After rebooting, run:
-
-lsmod | grep vboxguest
-
-
-ps aux | pgrep VBox
-
-
-## 🧪 Test Features
-
-#   * **Automatic screen resizing**: Try resizing your VM window.
-#   * **Shared clipboard**: Enable via `Devices → Shared Clipboard → Bidirectional`
-#   * **Shared folders**: Configure in VM settings → Shared Folders tab.
-#
-#   ---
-#
-#   ## 🛠️ Troubleshooting Tips
-#
-#   * If `/mnt/VBoxLinuxAdditions.run` fails:
-#
-#     * Make sure your system is **fully updated**.
-#     * Check for build tools: `gcc`, `make`, and `dkms` must be installed.
-#     * Re-insert the Guest Additions ISO if needed.
-#
