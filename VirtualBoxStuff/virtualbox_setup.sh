@@ -1,61 +1,52 @@
 #!/bin/bash
 
-# virtualbox_setup.sh - Combined script for VirtualBox setup
-# Combines functionality from:
-# 1. addsudo.sh - Add user to sudo group
-# 2. time-sync.sh - Configure time synchronization
-# 3. sources.list - Update apt sources
-# 4. guest-additions.sh - Install VirtualBox Guest Additions
+# Automate the annoying parts of setting up a new VirtualBox guest machine
+# Run this on a fresh install of a Linux iso in VirtualBox
+# change to the root user
+# then run this script like this:
+# sudo ./virtualbox_setup.sh yourusernamehere
+
+# What is does:
+# 1. Add user to sudo group ( for obvious reasons )
+# 2. Configure time synchronization (so that you can access the apt repositories)
+# 3. Update apt sources (debian 12 is using newer apt usrls)
+# 4. Install the VirtualBox Guest Additions (for screen resizes, and shared clipboard)
 
 set -e  # Exit on any error
 
-#-------------------------
-# Function: Check if running as root
-#-------------------------
+
+# you must run this script as root
 check_root() {
-    if [ "$EUID" -ne 0 ]; then
-        echo "❌ Please run as root (e.g. sudo $0 <username>)"
-        exit 1
-    fi
+    [ "$(id -u)" -ne 0 ] && printf "\e[1m\e[31m[WARNING] Please run as root e.g. sudo %s username\e[0m\n" "$0" || exit 1
 }
 
-#-------------------------
-# Function: Add user to sudo group
-#-------------------------
+# Add the user to sudo group
 add_to_sudo() {
-    # Check for username argument
-    if [ -z "$1" ]; then
-        echo "❌ Usage: $0 <username>"
-        exit 1
-    fi
+        [ -z "$1" ] && printf "\e[1m\e[31m[WARNING] Usage: %s <username>\e[0m\n" "$0" && exit 1
 
-    USERNAME="$1"
+        USERNAME="$1"
 
-    # Check if the user exists
-    if id "$USERNAME" &>/dev/null; then
-        echo "✅ User '$USERNAME' exists."
-    else
-        echo "❌ User '$USERNAME' does not exist. Create the user first with 'adduser $USERNAME'"
-        exit 1
-    fi
+        if id "$USERNAME" &>/dev/null; then
+        printf "\e[1m\e[31m[SUCCESS] User '%s' exists.\e[0m\n" "$USERNAME"
 
-    # Add the user to the sudo group
-    usermod -aG sudo "$USERNAME"
+        else
+            printf "\e[1m\e[31m[ERROR] User '%s' does not exist. Create the user first with 'adduser %s'\e[0m\n" "$USERNAME" "$USERNAME"
+            exit 1
+        fi
 
-    # Confirm the user was added
-    if id "$USERNAME" | grep -q '\bsudo\b'; then
-        echo "✅ '$USERNAME' has been added to the 'sudo' group."
-    else
-        echo "❌ Failed to add '$USERNAME' to 'sudo' group."
-        exit 1
-    fi
+        usermod -aG sudo "$USERNAME"
+
+        # Confirm the user was added
+        if id "$USERNAME" | grep -q '\bsudo\b'; then
+            printf "\e[1m\e[31m[SUCCESS] '%s' has been added to the 'sudo' group.\e[0m\n" "$USERNAME"
+        else
+            printf "\e[1m\e[31m[ERROR] Failed to add '%s' to 'sudo' group.\e[0m\n" "$USERNAME"
+            exit 1
+        fi
 }
 
-#-------------------------
-# Function: Update apt sources
-#-------------------------
 update_sources() {
-    echo "📝 Updating APT sources list..."
+    printf "\e[1m\e[31m[INFO] Updating APT sources list...\e[0m\n"
     cat > /etc/apt/sources.list << EOF
 # updated to fix issues
 deb-src http://deb.debian.org/debian/ bookworm main
@@ -63,184 +54,145 @@ deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmwar
 deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
 deb http://deb.debian.org/debian bookworm-updates main contrib non-free non-free-firmware
 EOF
-    echo "✅ APT sources updated successfully."
+    printf "\e[1m\e[31m[SUCCESS] APT sources updated successfully.\e[0m\n"
 }
 
-#-------------------------
-# Function: Check current time
-#-------------------------
 check_current_time() {
-    echo "🕒 Current system time:"
-    date
-    echo
+        printf "\e[1m\e[31m[INFO] Current system time:\e[0m\n"
+        date
+        printf "\n"
 }
 
-#-------------------------
-# Function: Install and configure chrony
-#-------------------------
 install_chrony() {
-    echo "📦 Installing chrony (best for VMs)..."
-    apt install -y chrony
+        printf "\e[1m\e[31m[INFO] Installing chrony (best for VMs)...\e[0m\n"
+        apt install -y chrony
 
-    echo "🔁 Enabling and starting chrony..."
-    systemctl enable chrony --now
+        printf "\e[1m\e[31m[INFO] Enabling and starting chrony...\e[0m\n"
+        systemctl enable chrony --now
 }
 
-#-------------------------
-# Function: Verify chrony status
-#-------------------------
 verify_chrony() {
-    echo "✅ Verifying chrony status..."
-    chronyc tracking
-    echo
-    timedatectl status
-    echo
+        printf "\e[1m\e[31m[INFO] Verifying chrony status...\e[0m\n"
+        chronyc tracking
+        printf "\n"
+        timedatectl status
+        printf "\n"
 }
 
-#-------------------------
-# Function: One-time sync with ntpdate (optional)
-#-------------------------
 manual_sync_ntpdate() {
-    echo "⏳ Optionally forcing one-time sync with ntpdate..."
-    apt install -y ntpdate
-    ntpdate pool.ntp.org
-    echo
+        printf "\e[1m\e[31m[INFO] Optionally forcing one-time sync with ntpdate...\e[0m\n"
+        apt install -y ntpdate
+        ntpdate pool.ntp.org
+        printf "\n"
 }
 
 
-#-------------------------
-# Function: Update and upgrade system
-#-------------------------
 update_system() {
-    echo "🔄 Updating system packages..."
-    apt update && apt upgrade -y
+        printf "\e[1m\e[31m[INFO] Updating system packages...\e[0m\n"
+        apt update && apt upgrade -y
 }
 
 
-#-------------------------
-# Function: Install required build tools
-#-------------------------
 install_dependencies() {
-    echo "🧱 Installing build tools and kernel headers..."
-    apt install -y build-essential dkms linux-headers-"$(uname -r)"
+        printf "\e[1m\e[31m[INFO] Installing build tools and kernel headers...\e[0m\n"
+        apt install -y build-essential dkms linux-headers-"$(uname -r)"
 }
 
-#-------------------------
-# Function: Mount Guest Additions CD
-#-------------------------
 mount_guest_additions_iso() {
-    echo "💿 Attempting to mount Guest Additions CD..."
-    if [ ! -d /mnt ]; then
-        mkdir /mnt
-    fi
+        printf "\e[1m\e[31m[INFO] Attempting to mount Guest Additions CD...\e[0m\n"
+        if [ ! -d /mnt ]; then
+            mkdir /mnt
+        fi
 
-    if mount | grep -q "/mnt"; then
-        echo "✅ ISO already mounted at /mnt."
-    else
-        mount /dev/cdrom /mnt || {
-            echo "❌ Failed to mount /dev/cdrom. Make sure the Guest Additions ISO is inserted from VirtualBox menu: Devices → Insert Guest Additions CD image..."
-            exit 1
-        }
-    fi
+        if mount | grep -q "/mnt"; then
+            printf "\e[1m\e[31m[SUCCESS] ISO already mounted at /mnt.\e[0m\n"
+        else
+            mount /dev/cdrom /mnt || {
+                printf "\e[1m\e[31m[ERROR] Failed to mount /dev/cdrom. Make sure the Guest Additions ISO is inserted from VirtualBox menu: Devices → Insert Guest Additions CD image...\e[0m\n"
+                exit 1
+            }
+        fi
 }
 
-#-------------------------
-# Function: Run the Guest Additions installer
-#-------------------------
 run_guest_additions_installer() {
-    echo "🚀 Running VBoxLinuxAdditions.run installer..."
-    if [ -f /mnt/VBoxLinuxAdditions.run ]; then
-        sh /mnt/VBoxLinuxAdditions.run || {
-            echo "❌ Guest Additions installer failed."
+        printf "\e[1m\e[31m[INFO] Running VBoxLinuxAdditions.run installer...\e[0m\n"
+        if [ -f /mnt/VBoxLinuxAdditions.run ]; then
+            sh /mnt/VBoxLinuxAdditions.run || {
+                printf "\e[1m\e[31m[ERROR] Guest Additions installer failed.\e[0m\n"
+                exit 1
+            }
+        else
+            printf "\e[1m\e[31m[ERROR] VBoxLinuxAdditions.run not found. Make sure the ISO is mounted correctly.\e[0m\n"
             exit 1
-        }
-    else
-        echo "❌ VBoxLinuxAdditions.run not found. Make sure the ISO is mounted correctly."
-        exit 1
-    fi
+        fi
 }
 
-#-------------------------
-# Function: Confirm installation
-#-------------------------
 verify_installation() {
-    echo "🧪 Verifying Guest Additions installation..."
-    lsmod | grep -i vbox || echo "⚠️ Kernel module 'vbox*' not found — may require reboot or indicate an issue."
-    pgrep VBox || echo "⚠️ VBox processes not found — check manually after reboot."
+        printf "\e[1m\e[31m[INFO] Verifying Guest Additions installation...\e[0m\n"
+        lsmod | grep -i vbox || printf "\e[1m\e[31m[WARNING] Kernel module 'vbox*' not found — may require reboot or indicate an issue.\e[0m\n"
+        pgrep VBox || printf "\e[1m\e[31m[WARNING] VBox processes not found — check manually after reboot.\e[0m\n"
 }
 
-#-------------------------
-# Function: Ask for reboot
-#-------------------------
 ask_reboot() {
-    read -rp "🔁 Reboot now to apply all changes? [Y/n]: " response
-    if [[ "$response" =~ ^[Yy]$ || -z "$response" ]]; then
-        echo "Rebooting..."
-        reboot
-    else
-        echo "ℹ️ Reboot skipped. Some changes may not take effect until next reboot."
-    fi
+        read -rp "[QUESTION] Reboot now to apply all changes? [Y/n]: " response
+        if [[ "$response" =~ ^[Yy]$ || -z "$response" ]]; then
+            printf "\e[1m\e[31m[INFO] Rebooting...\e[0m\n"
+            reboot
+        else
+            printf "\e[1m\e[31m[INFO] Reboot skipped. Some changes may not take effect until next reboot.\e[0m\n"
+        fi
 }
 
-#-------------------------
-# Main function
-#-------------------------
+
 main() {
-    check_root
+        check_root
 
-    # Get username from command line
-    USERNAME="$1"
+        USERNAME="$1"
 
-    # Display welcome message
-    echo "🖥️  VirtualBox VM Setup Script"
-    echo "=============================="
-    echo "This script will:"
-    echo "1. Add user to sudo group"
-    echo "2. Update APT sources"
-    echo "3. Configure time synchronization"
-    echo "4. Install VirtualBox Guest Additions"
-    echo
+        printf "\e[1m\e[31m[INFO] VirtualBox VM Setup Script\e[0m\n"
+        printf "\e[1m\e[31m==============================\e[0m\n"
+        printf "\e[1m\e[31m[INFO] This script will:\e[0m\n"
+        printf "\e[1m\e[31m1. Add user to sudo group\e[0m\n"
+        printf "\e[1m\e[31m2. Update APT sources\e[0m\n"
+        printf "\e[1m\e[31m3. Configure time synchronization\e[0m\n"
+        printf "\e[1m\e[31m4. Install VirtualBox Guest Additions\e[0m\n"
+        printf "\n"
 
-    # Confirm before proceeding
-    read -rp "Continue with setup? [Y/n]: " confirm
-    if [[ ! "$confirm" =~ ^[Yy]$ && ! -z "$confirm" ]]; then
-        echo "Setup cancelled."
-        exit 0
-    fi
+        # Confirm before proceeding
+        read -rp "[QUESTION] Continue with setup? [Y/n]: " confirm
+        if [[ ! "$confirm" =~ ^[Yy]$ && ! -z "$confirm" ]]; then
+            printf "\e[1m\e[31m[INFO] Setup cancelled.\e[0m\n"
+            exit 0
+        fi
 
-    # Step 1: Add user to sudo group
-    echo -e "\n📋 STEP 1: Adding user to sudo group"
-    echo "----------------------------------------"
-    add_to_sudo "$USERNAME"
+        printf "\n\e[1m\e[31m[STEP 1] Adding user to sudo group\e[0m\n"
+        printf "\e[1m\e[31m----------------------------------------\e[0m\n"
+        add_to_sudo "$USERNAME"
 
+        # !! Imortant: Configure time synchronization
+        printf "\n\e[1m\e[31m[STEP 3] Configuring time synchronization\e[0m\n"
+        printf "\e[1m\e[31m----------------------------------------\e[0m\n"
+        check_current_time
+        install_chrony
+        verify_chrony
+        manual_sync_ntpdate
 
-    # Step 2: Configure time synchronization
-    echo -e "\n📋 STEP 3: Configuring time synchronization"
-    echo "----------------------------------------"
-    check_current_time
-    install_chrony
-    verify_chrony
-    manual_sync_ntpdate
+        printf "\n\e[1m\e[31m[STEP 2] Updating APT sources\e[0m\n"
+        printf "\e[1m\e[31m----------------------------------------\e[0m\n"
+        update_sources
+        update_system
 
-    # Step 3: Update APT sources
-    echo -e "\n📋 STEP 2: Updating APT sources"
-    echo "----------------------------------------"
-    update_sources
-    update_system
+        # Install VBox Guest Additions .iso
+        printf "\n\e[1m\e[31m[STEP 4] Installing VirtualBox Guest Additions\e[0m\n"
+        printf "\e[1m\e[31m----------------------------------------\e[0m\n"
+        install_dependencies
+        mount_guest_additions_iso
+        run_guest_additions_installer
+        verify_installation
 
-    # Step 4: Install VirtualBox Guest Additions
-    echo -e "\n📋 STEP 4: Installing VirtualBox Guest Additions"
-    echo "----------------------------------------"
-    install_dependencies
-    mount_guest_additions_iso
-    run_guest_additions_installer
-    verify_installation
-
-    echo -e "\n✅ VirtualBox VM setup completed successfully!"
-    ask_reboot
+        printf "\n\e[1m\e[31m[SUCCESS] VirtualBox VM setup completed successfully!\e[0m\n"
+        ask_reboot
 }
 
-# Execute main with all arguments
 main "$@"
-
 
