@@ -3,9 +3,9 @@
 # virtualbox_setup.sh - Combined script for VirtualBox setup
 # Combines functionality from:
 # 1. addsudo.sh - Add user to sudo group
-# 2. guest-additions.sh - Install VirtualBox Guest Additions
+# 2. time-sync.sh - Configure time synchronization
 # 3. sources.list - Update apt sources
-# 4. time-sync.sh - Configure time synchronization
+# 4. guest-additions.sh - Install VirtualBox Guest Additions
 
 set -e  # Exit on any error
 
@@ -67,12 +67,55 @@ EOF
 }
 
 #-------------------------
+# Function: Check current time
+#-------------------------
+check_current_time() {
+    echo "🕒 Current system time:"
+    date
+    echo
+}
+
+#-------------------------
+# Function: Install and configure chrony
+#-------------------------
+install_chrony() {
+    echo "📦 Installing chrony (best for VMs)..."
+    apt install -y chrony
+
+    echo "🔁 Enabling and starting chrony..."
+    systemctl enable chrony --now
+}
+
+#-------------------------
+# Function: Verify chrony status
+#-------------------------
+verify_chrony() {
+    echo "✅ Verifying chrony status..."
+    chronyc tracking
+    echo
+    timedatectl status
+    echo
+}
+
+#-------------------------
+# Function: One-time sync with ntpdate (optional)
+#-------------------------
+manual_sync_ntpdate() {
+    echo "⏳ Optionally forcing one-time sync with ntpdate..."
+    apt install -y ntpdate
+    ntpdate pool.ntp.org
+    echo
+}
+
+
+#-------------------------
 # Function: Update and upgrade system
 #-------------------------
 update_system() {
     echo "🔄 Updating system packages..."
     apt update && apt upgrade -y
 }
+
 
 #-------------------------
 # Function: Install required build tools
@@ -127,47 +170,6 @@ verify_installation() {
 }
 
 #-------------------------
-# Function: Check current time
-#-------------------------
-check_current_time() {
-    echo "🕒 Current system time:"
-    date
-    echo
-}
-
-#-------------------------
-# Function: Install and configure chrony
-#-------------------------
-install_chrony() {
-    echo "📦 Installing chrony (best for VMs)..."
-    apt install -y chrony
-
-    echo "🔁 Enabling and starting chrony..."
-    systemctl enable chrony --now
-}
-
-#-------------------------
-# Function: Verify chrony status
-#-------------------------
-verify_chrony() {
-    echo "✅ Verifying chrony status..."
-    chronyc tracking
-    echo
-    timedatectl status
-    echo
-}
-
-#-------------------------
-# Function: One-time sync with ntpdate (optional)
-#-------------------------
-manual_sync_ntpdate() {
-    echo "⏳ Optionally forcing one-time sync with ntpdate..."
-    apt install -y ntpdate
-    ntpdate pool.ntp.org
-    echo
-}
-
-#-------------------------
 # Function: Ask for reboot
 #-------------------------
 ask_reboot() {
@@ -195,8 +197,8 @@ main() {
     echo "This script will:"
     echo "1. Add user to sudo group"
     echo "2. Update APT sources"
-    echo "3. Install VirtualBox Guest Additions"
-    echo "4. Configure time synchronization"
+    echo "3. Configure time synchronization"
+    echo "4. Install VirtualBox Guest Additions"
     echo
 
     # Confirm before proceeding
@@ -206,22 +208,39 @@ main() {
         exit 0
     fi
 
-    # Run all tasks
+    # Step 1: Add user to sudo group
+    echo -e "\n📋 STEP 1: Adding user to sudo group"
+    echo "----------------------------------------"
     add_to_sudo "$USERNAME"
-    update_sources
-    update_system
-    install_dependencies
-    mount_guest_additions_iso
-    run_guest_additions_installer
-    verify_installation
+
+
+    # Step 2: Configure time synchronization
+    echo -e "\n📋 STEP 3: Configuring time synchronization"
+    echo "----------------------------------------"
     check_current_time
     install_chrony
     verify_chrony
     manual_sync_ntpdate
 
-    echo "✅ VirtualBox VM setup completed successfully!"
+    # Step 3: Update APT sources
+    echo -e "\n📋 STEP 2: Updating APT sources"
+    echo "----------------------------------------"
+    update_sources
+    update_system
+
+    # Step 4: Install VirtualBox Guest Additions
+    echo -e "\n📋 STEP 4: Installing VirtualBox Guest Additions"
+    echo "----------------------------------------"
+    install_dependencies
+    mount_guest_additions_iso
+    run_guest_additions_installer
+    verify_installation
+
+    echo -e "\n✅ VirtualBox VM setup completed successfully!"
     ask_reboot
 }
 
 # Execute main with all arguments
 main "$@"
+
+
