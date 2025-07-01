@@ -53,77 +53,119 @@ check_root() {
 
 # Function to check if a package is installed
 is_installed() {
-    dpkg-query -W "$1" >/dev/null 2>&1
+    dpkg -l | grep -q "ii  $1 "
 }
 
 cmd_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Function to check distribution
+check_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        info "Detected distribution: $NAME $VERSION_ID"
+        return 0
+    else
+        warning "Could not detect distribution, assuming Debian-based"
+        return 1
+    fi
+}
 
 update_system() {
     info "Updating system..."
-    apt update && apt upgrade -y
+    apt update || error "Failed to update package lists"
+    apt upgrade -y || warning "Some packages could not be upgraded"
     success "System updated"
 }
 
-pkgs=(
-     vim
-     neovim
-     git
-     curl
-     gcc
-     make
-     unzip
-     x11-utils
-     x11-xserver-utils
-     xdotool
-     xclip
-     xsel
-)
+# Define packages based on distribution
+setup_packages() {
+    # Common packages for all distributions
+    pkgs=(
+        vim
+        neovim
+        git
+        curl
+        gcc
+        make
+        unzip
+        xclip
+        xsel
+    )
 
+    # Add distribution-specific packages
+    if [ -f /etc/debian_version ]; then
+        # Debian/Ubuntu packages
+        pkgs+=(x11-utils x11-xserver-utils xdotool)
+    elif [ -f /etc/fedora-release ]; then
+        # Fedora packages
+        pkgs+=(xorg-x11-utils xorg-x11-server-utils xdotool)
+    elif [ -f /etc/arch-release ]; then
+        # Arch Linux packages
+        pkgs+=(xorg-xdpyinfo xorg-server-utils xdotool)
+    else
+        # Try common package names as fallback
+        pkgs+=(x11-utils x11-xserver-utils xdotool)
+        warning "Unknown distribution, using default package names"
+    fi
+}
 
 # Function to install packages
 install_packages() {
-        info "Installing packages..."
+    info "Installing packages..."
 
-        local total=${#pkgs[@]}
-        local count=0
-        local failed=()
+    # Setup package list based on distribution
+    setup_packages
 
-        for pkg in "${pkgs[@]}"; do
-            ((count++))
-            if ! is_installed "$pkg"; then
-                printf "Installing (%d/%d): %s\n" "$count" "$total" "$pkg"
-                if apt install -y "$pkg" 2>/dev/null; then
-                    success "Installed $pkg"
-                else
-                    warning "Failed to install $pkg"
-                    failed+=("$pkg")
-                fi
+    local total=${#pkgs[@]}
+    local count=0
+    local failed=()
+
+    for pkg in "${pkgs[@]}"; do
+        ((count++))
+        info "Checking package ($count/$total): $pkg"
+
+        if ! is_installed "$pkg"; then
+            info "Installing package: $pkg"
+            if apt install -y "$pkg"; then
+                success "Installed $pkg"
             else
-                info "Package $pkg is already installed."
+                warning "Failed to install $pkg"
+                failed+=("$pkg")
             fi
-        done
-
-        if [ ${#failed[@]} -gt 0 ]; then
-            warning "Failed to install ${#failed[@]} packages: ${failed[*]}"
         else
-            success "All packages installed successfully"
+            info "Package $pkg is already installed."
         fi
+    done
 
+    if [ ${#failed[@]} -gt 0 ]; then
+        warning "Failed to install ${#failed[@]} packages: ${failed[*]}"
+
+        # Try to install failed packages one by one with more verbose output
+        info "Attempting to install failed packages individually with more verbose output..."
+        for pkg in "${failed[@]}"; do
+            info "Retrying installation of $pkg..."
+            apt install -y "$pkg" || warning "Package $pkg installation failed again"
+        done
+    else
+        success "All packages installed successfully"
+    fi
 }
-
 
 # Download and install .bashrc file
 bashrc(){
     info "Setting up .bashrc..."
-    curl -L https://raw.githubusercontent.com/LinuxUser255/ShellScripting/refs/heads/main/VirtualBoxStuff/.bashrc -o /tmp/.bashrc
+    curl -L https://raw.githubusercontent.com/LinuxUser255/ShellScripting/refs/heads/main/VirtualBoxStuff/.bashrc -o /tmp/.bashrc || {
+        error "Failed to download .bashrc file"
+    }
+
     # Make a backup of the existing .bashrc
     if [ -f /root/.bashrc ]; then
         cp /root/.bashrc /root/.bashrc.backup
         info "Backed up existing .bashrc to .bashrc.backup"
     fi
+
     mv /tmp/.bashrc /root/.bashrc
     success "Bashrc configured"
 }
@@ -132,8 +174,12 @@ bashrc(){
 neovim_config(){
     info "Setting up Neovim configuration..."
     mkdir -p /root/.config/nvim/
+
     # Download options.lua file to ~/.config/nvim/ directory and rename to init.lua
-    curl -L https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/neovim/.config/nvim/options.lua -o /tmp/options.lua
+    curl -L https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/neovim/.config/nvim/options.lua -o /tmp/options.lua || {
+        error "Failed to download Neovim configuration"
+    }
+
     mv /tmp/options.lua /root/.config/nvim/init.lua
     success "Neovim configured"
 }
@@ -141,7 +187,10 @@ neovim_config(){
 shortcuts(){
     info "Setting up shortcuts..."
     # Download shell script that increases cursor speed and move it to /usr/local/bin/
-    curl -L https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/faster.sh -o /tmp/faster.sh
+    curl -L https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/faster.sh -o /tmp/faster.sh || {
+        error "Failed to download shortcuts script"
+    }
+
     chmod +x /tmp/faster.sh
     mv /tmp/faster.sh /usr/local/bin/fast
     success "Shortcuts configured"
@@ -157,6 +206,9 @@ main() {
 
     # Check if running as root
     check_root
+
+    # Check distribution
+    check_distro
 
     # Ask for confirmation
     read -rp "Do you want to proceed with the basic rice setup? [y/N] " response
