@@ -55,6 +55,35 @@ add_to_sudo() {
         fi
 }
 
+check_current_time() {
+    printf "\e[1m\e[31m[INFO] Current system time:\e[0m\n"
+    date
+    printf "\n"
+}
+
+install_chrony() {
+    printf "\e[1m\e[31m[INFO] Installing chrony (best for VMs)...\e[0m\n"
+    apt install -y chrony
+
+    printf "\e[1m\e[31m[INFO] Enabling and starting chrony...\e[0m\n"
+    systemctl enable chrony --now
+}
+
+verify_chrony() {
+    printf "\e[1m\e[31m[INFO] Verifying chrony status...\e[0m\n"
+    chronyc tracking
+    printf "\n"
+    timedatectl status
+    printf "\n"
+}
+
+manual_sync_ntpdate() {
+    printf "\e[1m\e[31m[INFO] Optionally forcing one-time sync with ntpdate...\e[0m\n"
+    apt install -y ntpdate
+    ntpdate pool.ntp.org
+    printf "\n"
+}
+
 update_sources() {
     printf "\e[1m\e[31m[INFO] Updating APT sources list...\e[0m\n"
     cat > /etc/apt/sources.list << EOF
@@ -65,35 +94,6 @@ deb http://security.debian.org/debian-security bookworm-security main contrib no
 deb http://deb.debian.org/debian bookworm-updates main contrib non-free non-free-firmware
 EOF
     printf "\e[1m\e[31m[SUCCESS] APT sources updated successfully.\e[0m\n"
-}
-
-check_current_time() {
-        printf "\e[1m\e[31m[INFO] Current system time:\e[0m\n"
-        date
-        printf "\n"
-}
-
-install_chrony() {
-        printf "\e[1m\e[31m[INFO] Installing chrony (best for VMs)...\e[0m\n"
-        apt install -y chrony
-
-        printf "\e[1m\e[31m[INFO] Enabling and starting chrony...\e[0m\n"
-        systemctl enable chrony --now
-}
-
-verify_chrony() {
-        printf "\e[1m\e[31m[INFO] Verifying chrony status...\e[0m\n"
-        chronyc tracking
-        printf "\n"
-        timedatectl status
-        printf "\n"
-}
-
-manual_sync_ntpdate() {
-        printf "\e[1m\e[31m[INFO] Optionally forcing one-time sync with ntpdate...\e[0m\n"
-        apt install -y ntpdate
-        ntpdate pool.ntp.org
-        printf "\n"
 }
 
 
