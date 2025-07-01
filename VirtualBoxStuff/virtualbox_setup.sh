@@ -179,18 +179,18 @@ main() {
         printf "\e[1m\e[31m----------------------------------------\e[0m\n"
         add_to_sudo "$USERNAME"
 
-        printf "\n\e[1m\e[31m[STEP 2] Updating APT sources\e[0m\n"
-        printf "\e[1m\e[31m----------------------------------------\e[0m\n"
-        update_sources
-        update_system
-
-        # !! Imortant: Configure time synchronization
-        printf "\n\e[1m\e[31m[STEP 3] Configuring time synchronization\e[0m\n"
+        # Important: Configure time synchronization
+        printf "\n\e[1m\e[31m[STEP 2] Configuring time synchronization\e[0m\n"
         printf "\e[1m\e[31m----------------------------------------\e[0m\n"
         check_current_time
         install_chrony
         verify_chrony
         manual_sync_ntpdate
+
+        printf "\n\e[1m\e[31m[STEP 3] Updating APT sources\e[0m\n"
+        printf "\e[1m\e[31m----------------------------------------\e[0m\n"
+        update_sources
+        update_system
 
         # Install VBox Guest Additions .iso
         printf "\n\e[1m\e[31m[STEP 4] Installing VirtualBox Guest Additions\e[0m\n"
