@@ -24,7 +24,8 @@ print_msg() {
 # Function to print error messages
 error(){
     print_msg "$RED" "Error: $1" >&2
-    exit 1
+    # Don't exit on error, just report it
+    return 1
 }
 
 # Function to print success messages
@@ -47,6 +48,7 @@ warning(){
 check_root() {
     if [ "$(id -u)" -ne 0 ]; then
         error "Please run this script as root."
+        exit 1
     fi
 }
 
@@ -62,10 +64,9 @@ cmd_exists() {
 
 update_system() {
     info "Updating system..."
-    apt update || { warning "Failed to update package lists"; return 1; }
+    apt update || warning "Failed to update package lists"
     apt upgrade -y || warning "Some packages could not be upgraded"
     success "System updated"
-    return 0
 }
 
 # Define packages to install
@@ -137,8 +138,6 @@ install_packages() {
     else
         success "All packages installed successfully"
     fi
-
-    return 0
 }
 
 # Download and install .bashrc file
@@ -146,7 +145,7 @@ bashrc(){
     info "Setting up .bashrc..."
     if ! curl -L https://raw.githubusercontent.com/LinuxUser255/ShellScripting/refs/heads/main/VirtualBoxStuff/.bashrc -o /tmp/.bashrc; then
         warning "Failed to download .bashrc file"
-        return 1
+        return
     fi
 
     # Make a backup of the existing .bashrc
@@ -157,7 +156,6 @@ bashrc(){
 
     mv /tmp/.bashrc /root/.bashrc
     success "Bashrc configured"
-    return 0
 }
 
 # Set up neovim configuration
@@ -168,12 +166,11 @@ neovim_config(){
     # Download options.lua file to ~/.config/nvim/ directory and rename to init.lua
     if ! curl -L https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/neovim/.config/nvim/options.lua -o /tmp/options.lua; then
         warning "Failed to download Neovim configuration"
-        return 1
+        return
     fi
 
     mv /tmp/options.lua /root/.config/nvim/init.lua
     success "Neovim configured"
-    return 0
 }
 
 shortcuts(){
@@ -181,13 +178,12 @@ shortcuts(){
     # Download shell script that increases cursor speed and move it to /usr/local/bin/
     if ! curl -L https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/faster.sh -o /tmp/faster.sh; then
         warning "Failed to download shortcuts script"
-        return 1
+        return
     fi
 
     chmod +x /tmp/faster.sh
     mv /tmp/faster.sh /usr/local/bin/fast
     success "Shortcuts configured"
-    return 0
 }
 
 main() {
