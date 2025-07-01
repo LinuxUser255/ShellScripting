@@ -134,19 +134,8 @@ install_packages() {
 # Download and install .bashrc file
 bashrc(){
     info "Setting up .bashrc..."
-    if ! curl -L https://raw.githubusercontent.com/LinuxUser255/ShellScripting/refs/heads/main/VirtualBoxStuff/.bashrc -o /tmp/.bashrc; then
-        warning "Failed to download .bashrc file"
-        return
-    fi
+    curl -LO https://raw.githubusercontent.com/LinuxUser255/ShellScripting/refs/heads/main/VirtualBoxStuff/.bashrc
 
-    # Make a backup of the existing .bashrc
-    if [ -f /root/.bashrc ]; then
-        cp /root/.bashrc /root/.bashrc.backup
-        info "Backed up existing .bashrc to .bashrc.backup"
-    fi
-
-    mv /tmp/.bashrc /root/.bashrc
-    success "Bashrc configured"
 }
 
 # Set up neovim configuration
@@ -155,26 +144,19 @@ neovim_config(){
     mkdir -p /root/.config/nvim/
 
     # Download options.lua file to ~/.config/nvim/ directory and rename to init.lua
-    if ! curl -L https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/neovim/.config/nvim/options.lua -o /tmp/options.lua; then
-        warning "Failed to download Neovim configuration"
-        return
-    fi
+    curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/neovim/.config/nvim/options.lua
+    mv options.lua init.lua && mv init.lua -t ~/.config/nvim/
 
-    mv /tmp/options.lua /root/.config/nvim/init.lua
-    success "Neovim configured"
 }
 
 shortcuts(){
     info "Setting up shortcuts..."
     # Download shell script that increases cursor speed and move it to /usr/local/bin/
-    if ! curl -L https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/faster.sh -o /tmp/faster.sh; then
-        warning "Failed to download shortcuts script"
-        return
-    fi
-
+    curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/faster.sh
     chmod +x /tmp/faster.sh
-    mv /tmp/faster.sh /usr/local/bin/fast
-    success "Shortcuts configured"
+    mv faster.sh fast
+    sudo mv fast -t /usr/local/bin/
+
 }
 
 main() {
