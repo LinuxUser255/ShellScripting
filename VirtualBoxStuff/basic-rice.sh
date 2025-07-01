@@ -30,7 +30,6 @@ error(){
 # Function to print success messages
 success(){
     print_msg "$GREEN" "Success: $1"
-    # Removed exit 1 as it would terminate the script prematurely
 }
 
 # Function to print informational messages
@@ -46,7 +45,9 @@ warning(){
 
 
 check_root() {
-    [ "$(id -u)" -ne 0 ] && error "Please run this script as root." && exit 1
+    if [ "$(id -u)" -ne 0 ]; then
+        error "Please run this script as root."
+    fi
 }
 
 
@@ -74,8 +75,8 @@ pkgs=(
      gcc
      make
      unzip
-     x11-server-utils
-     setxkbmap
+     x11-utils
+     x11-xserver-utils
      xdotool
      xclip
      xsel
@@ -94,7 +95,7 @@ install_packages() {
             ((count++))
             if ! is_installed "$pkg"; then
                 printf "Installing (%d/%d): %s\n" "$count" "$total" "$pkg"
-                if apt install -y "$pkg" &>/dev/null; then
+                if apt install -y "$pkg" 2>/dev/null; then
                     success "Installed $pkg"
                 else
                     warning "Failed to install $pkg"
@@ -105,7 +106,7 @@ install_packages() {
             fi
         done
 
-        if ((${#failed[@]} > 0)); then
+        if [ ${#failed[@]} -gt 0 ]; then
             warning "Failed to install ${#failed[@]} packages: ${failed[*]}"
         else
             success "All packages installed successfully"
@@ -117,16 +118,23 @@ install_packages() {
 # Download and install .bashrc file
 bashrc(){
     info "Setting up .bashrc..."
-    curl -L https://raw.githubusercontent.com/LinuxUser255/ShellScripting/refs/heads/main/VirtualBoxStuff/.bashrc -o ~/.bashrc
+    curl -L https://raw.githubusercontent.com/LinuxUser255/ShellScripting/refs/heads/main/VirtualBoxStuff/.bashrc -o /tmp/.bashrc
+    # Make a backup of the existing .bashrc
+    if [ -f /root/.bashrc ]; then
+        cp /root/.bashrc /root/.bashrc.backup
+        info "Backed up existing .bashrc to .bashrc.backup"
+    fi
+    mv /tmp/.bashrc /root/.bashrc
     success "Bashrc configured"
 }
 
 # Set up neovim configuration
 neovim_config(){
     info "Setting up Neovim configuration..."
-    mkdir -p ~/.config/nvim/
+    mkdir -p /root/.config/nvim/
     # Download options.lua file to ~/.config/nvim/ directory and rename to init.lua
-    curl -L https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/neovim/.config/nvim/options.lua -o ~/.config/nvim/init.lua
+    curl -L https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/neovim/.config/nvim/options.lua -o /tmp/options.lua
+    mv /tmp/options.lua /root/.config/nvim/init.lua
     success "Neovim configured"
 }
 
@@ -140,13 +148,43 @@ shortcuts(){
 }
 
 main() {
+    # Print banner
+    echo -e "${RED}${BOLD}"
+    echo "======================================"
+    echo "       Basic Linux Rice Script        "
+    echo "======================================"
+    echo -e "${RESET}"
+
+    # Check if running as root
     check_root
+
+    # Ask for confirmation
+    read -rp "Do you want to proceed with the basic rice setup? [y/N] " response
+    if [[ ! "$response" =~ ^[Yy]$ ]]; then
+        info "Setup cancelled."
+        exit 0
+    fi
+
+    info "Starting system configuration..."
+
+    # Run all the functions
     update_system
     install_packages
     bashrc
     neovim_config
     shortcuts
+
     success "System configuration complete!"
+
+    # Ask for reboot
+    read -rp "Do you want to reboot now to apply all changes? [y/N] " reboot_response
+    if [[ "$reboot_response" =~ ^[Yy]$ ]]; then
+        info "Rebooting system..."
+        reboot
+    else
+        info "Reboot skipped. Some changes may require a reboot to take effect."
+    fi
 }
 
+# Run the main function
 main
