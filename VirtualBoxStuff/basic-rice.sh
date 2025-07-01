@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-
-# Strict mode
-set -euo pipefail
-IFS=$'\n\t'
-
 # Text formatting
 readonly BOLD="\e[1m"
 readonly RESET="\e[0m"
@@ -12,7 +7,6 @@ readonly RED="\e[31m"
 readonly GREEN="\e[32m"
 readonly YELLOW="\e[33m"
 readonly BLUE="\e[34m"
-
 
 # Function to print colored output
 print_msg() {
@@ -38,12 +32,10 @@ info(){
     print_msg "$BLUE" "Info: $1"
 }
 
-
 # Function to print warning messages
 warning(){
     print_msg "$YELLOW" "Warning: $1"
 }
-
 
 check_root() {
     if [ "$(id -u)" -ne 0 ]; then
@@ -51,7 +43,6 @@ check_root() {
         exit 1
     fi
 }
-
 
 # Function to check if a package is installed
 is_installed() {
