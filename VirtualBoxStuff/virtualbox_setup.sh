@@ -17,7 +17,10 @@ set -e  # Exit on any error
 
 # you must run this script as root
 check_root() {
-    [ "$(id -u)" -ne 0 ] && printf "\e[1m\e[31m[WARNING] Please run as root e.g. sudo %s username\e[0m\n" "$0" || exit 1
+    if [ "$(id -u)" -ne 0 ]; then
+        printf "\e[1m\e[31m[WARNING] Please run as root e.g. sudo %s username\e[0m\n" "$0"
+        exit 1
+    fi
 }
 
 # Add the user to sudo group
@@ -32,6 +35,13 @@ add_to_sudo() {
         else
             printf "\e[1m\e[31m[ERROR] User '%s' does not exist. Create the user first with 'adduser %s'\e[0m\n" "$USERNAME" "$USERNAME"
             exit 1
+        fi
+
+        # Ensure the required package is installed
+        if ! command -v usermod &>/dev/null; then
+            printf "\e[1m\e[31m[INFO] Installing required packages for user management...\e[0m\n"
+            apt update
+            apt install -y passwd
         fi
 
         usermod -aG sudo "$USERNAME"
@@ -169,6 +179,11 @@ main() {
         printf "\e[1m\e[31m----------------------------------------\e[0m\n"
         add_to_sudo "$USERNAME"
 
+        printf "\n\e[1m\e[31m[STEP 2] Updating APT sources\e[0m\n"
+        printf "\e[1m\e[31m----------------------------------------\e[0m\n"
+        update_sources
+        update_system
+
         # !! Imortant: Configure time synchronization
         printf "\n\e[1m\e[31m[STEP 3] Configuring time synchronization\e[0m\n"
         printf "\e[1m\e[31m----------------------------------------\e[0m\n"
@@ -176,11 +191,6 @@ main() {
         install_chrony
         verify_chrony
         manual_sync_ntpdate
-
-        printf "\n\e[1m\e[31m[STEP 2] Updating APT sources\e[0m\n"
-        printf "\e[1m\e[31m----------------------------------------\e[0m\n"
-        update_sources
-        update_system
 
         # Install VBox Guest Additions .iso
         printf "\n\e[1m\e[31m[STEP 4] Installing VirtualBox Guest Additions\e[0m\n"
