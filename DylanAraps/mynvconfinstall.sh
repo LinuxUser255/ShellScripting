@@ -652,7 +652,8 @@ remove_old_config() {
 # Git clone the Neovim configuration repo
 install_config() {
         printf "\e[1;34m[+] Git cloning new config & opening Neovim to install plugins...\e[0m\n"
-        git clone https://github.com/LinuxUser255/nvim.git "${XDG_CONFIG_HOME:-$HOME/.config}"/nvim
+        # ./mynvconfinstall.sh: line 655: unexpected EOF while looking for matching `"'
+        git clone https://github.com/LinuxUser255/nvim.git "${XDG_CONFIG_HOME:-$HOME/.config}"/nvim"
 }
 
 
