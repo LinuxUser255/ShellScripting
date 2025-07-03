@@ -32,6 +32,12 @@ PATH=$PATH:/usr/xpg4/bin:/usr/sbin:/sbin:/usr/etc:/usr/libexec
 LC_ALL=C
 LANG=C
 
+# Set default values for configuration variables
+distro_shorthand=${distro_shorthand:-off}  # Default to 'off' if not set
+os_arch=${os_arch:-on}                     # Default to 'on' if not set
+kernel_shorthand=${kernel_shorthand:-off}  # Default to 'off' if not set
+ascii_distro=${ascii_distro:-auto}         # Default to 'auto' if not set
+
 #trim_quotes() {
 #    # Remove leading and trailing quotes from a string
 #    input_str=$1
@@ -146,6 +152,7 @@ get_distro() {
                 for file in /etc/lsb-release /usr/lib/os-release \
                             /etc/os-release  /etc/openwrt_release; do
                     if [ -f "$file" ]; then
+                        # shellcheck disable=SC1090
                         . "$file"
                         break
                     fi
@@ -173,8 +180,8 @@ get_distro() {
             elif command -v crux >/dev/null; then
                 distro=$(crux)
                 case $distro_shorthand in
-                    on)   distro=${distro//version} ;;
-                    tiny) distro=${distro//version*}
+                    on)   distro=$(echo "$distro" | sed 's/version//g') ;;
+                    tiny) distro=$(echo "$distro" | sed 's/version.*//g') ;;
                 esac
 
             elif command -v tazpkg >/dev/null; then
@@ -253,13 +260,13 @@ get_distro() {
             # Get Ubuntu flavor.
             if [ "${distro#Ubuntu}" != "$distro" ]; then
                 case $XDG_CONFIG_DIRS in
-                    *"studio"*)   distro=${distro/Ubuntu/Ubuntu Studio} ;;
-                    *"plasma"*)   distro=${distro/Ubuntu/Kubuntu} ;;
-                    *"mate"*)     distro=${distro/Ubuntu/Ubuntu MATE} ;;
-                    *"xubuntu"*)  distro=${distro/Ubuntu/Xubuntu} ;;
-                    *"Lubuntu"*)  distro=${distro/Ubuntu/Lubuntu} ;;
-                    *"budgie"*)   distro=${distro/Ubuntu/Ubuntu Budgie} ;;
-                    *"cinnamon"*) distro=${distro/Ubuntu/Ubuntu Cinnamon} ;;
+                    *"studio"*)   distro=$(echo "$distro" | sed 's/Ubuntu/Ubuntu Studio/g') ;;
+                    *"plasma"*)   distro=$(echo "$distro" | sed 's/Ubuntu/Kubuntu/g') ;;
+                    *"mate"*)     distro=$(echo "$distro" | sed 's/Ubuntu/Ubuntu MATE/g') ;;
+                    *"xubuntu"*)  distro=$(echo "$distro" | sed 's/Ubuntu/Xubuntu/g') ;;
+                    *"Lubuntu"*)  distro=$(echo "$distro" | sed 's/Ubuntu/Lubuntu/g') ;;
+                    *"budgie"*)   distro=$(echo "$distro" | sed 's/Ubuntu/Ubuntu Budgie/g') ;;
+                    *"cinnamon"*) distro=$(echo "$distro" | sed 's/Ubuntu/Ubuntu Cinnamon/g') ;;
                 esac
             fi
         ;;
@@ -287,18 +294,17 @@ get_distro() {
             distro="$codename $osx_version $osx_build"
 
             case $distro_shorthand in
-                on) distro=${distro/ ${osx_build}} ;;
+                on) distro=$(echo "$distro" | sed "s/ ${osx_build}//") ;;
 
                 tiny)
                     case $osx_version in
-                        10.[4-7]*)            distro=${distro/${codename}/Mac OS X} ;;
-                        10.[8-9]*|10.1[0-1]*) distro=${distro/${codename}/OS X} ;;
-                        10.1[2-6]*|11.0*)     distro=${distro/${codename}/macOS} ;;
+                        10.[4-7]*)            distro=$(echo "$distro" | sed "s/${codename}/Mac OS X/") ;;
+                        10.[8-9]*|10.1[0-1]*) distro=$(echo "$distro" | sed "s/${codename}/OS X/") ;;
+                        10.1[2-6]*|11.0*)     distro=$(echo "$distro" | sed "s/${codename}/macOS/") ;;
                     esac
-                    distro=${distro/ ${osx_build}}
+                    distro=${distro/ ${osx_build}/}
                 ;;
             esac
-        ;;
 
         "iPhone OS")
             distro="iOS $osx_version"
@@ -518,13 +524,13 @@ install_deps() {
             # Bedrock Linux - try to use the native package manager of the current stratum
             elif [ -f /bedrock/etc/bedrock-release ]; then
                 printf "\e[1;34m[+] Detected Bedrock Linux\e[0m\n"
-                if command -v apt &>/dev/null; then
+                if command -v apt >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using APT package manager\e[0m\n"
                     sudo apt update && sudo apt install -y "$deps"
-                elif command -v pacman &>/dev/null; then
+                elif command -v pacman >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using Pacman package manager\e[0m\n"
                     sudo pacman -Syu --needed --noconfirm "$deps"
-                elif command -v dnf &>/dev/null; then
+                elif command -v dnf >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using DNF package manager\e[0m\n"
                     sudo dnf update -y && sudo dnf install -y "$deps"
                 else
@@ -537,22 +543,22 @@ install_deps() {
                 printf "\e[1;33m[!] Unknown Linux distribution: %s\e[0m\n" "$distro"
                 printf "\e[1;33m[!] Attempting to detect package manager...\e[0m\n"
 
-                if command -v apt &>/dev/null; then
+                if command -v apt >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using APT package manager\e[0m\n"
                     sudo apt update && sudo apt install -y "$deps"
-                elif command -v pacman &>/dev/null; then
+                elif command -v pacman >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using Pacman package manager\e[0m\n"
                     sudo pacman -Syu --needed --noconfirm "$deps"
-                elif command -v dnf &>/dev/null; then
+                elif command -v dnf >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using DNF package manager\e[0m\n"
                     sudo dnf update -y && sudo dnf install -y "$deps"
-                elif command -v yum &>/dev/null; then
+                elif command -v yum >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using YUM package manager\e[0m\n"
                     sudo yum update -y && sudo yum install -y "$deps"
-                elif command -v zypper &>/dev/null; then
+                elif command -v zypper >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using Zypper package manager\e[0m\n"
                     sudo zypper refresh && sudo zypper install -y "$deps"
-                elif command -v xbps-install &>/dev/null; then
+                elif command -v xbps-install >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using XBPS package manager\e[0m\n"
                     sudo xbps-install -Syu "$deps"
                 else
@@ -647,7 +653,7 @@ install_deps() {
             printf "\e[1;31m[-] Unsupported OS: %s\e[0m\n" "$os"
             printf "\e[1;31m[-] Please install the following dependencies manually:\e[0m\n"
             printf "\e[1;31m    %s\e[0m\n" ""$deps""
-            read p "Press Enter to continue after installing dependencies manually..."
+            read -r  "Press Enter to continue after installing dependencies manually..."
         ;;
     esac
 }
