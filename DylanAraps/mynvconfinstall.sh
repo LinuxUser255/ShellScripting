@@ -564,20 +564,20 @@ install_deps() {
                 else
                     printf "\e[1;31m[-] Could not determine package manager\e[0m\n"
                     printf "\e[1;31m[-] Please install the following dependencies manually:\e[0m\n"
-                    printf "\e[1;31m    %s\e[0m\n" ""$deps""
-                    read p "Press Enter to continue after installing dependencies manually..."
+                    printf "\e[1;31m    %s\e[0m\n" \""$deps\""
+                    read -r p "Press Enter to continue after installing dependencies manually..."
                 fi
             fi
         ;;
 
         "Mac OS X"|"macOS")
-            if command -v brew &>/dev/null; then
+            if command -v brew >/dev/null 2&1; then
                 printf "\e[1;34m[+] Using Homebrew package manager\e[0m\n"
                 brew update && brew install tree-sitter node shellcheck ripgrep
             else
                 printf "\e[1;31m[-] Homebrew not found. Please install Homebrew first:\e[0m\n"
                 printf '\e[1;31m    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"\e[0m\n'
-                read p "Press Enter to continue after installing Homebrew..."
+                read -r p "Press Enter to continue after installing Homebrew..."
                 brew update && brew install tree-sitter node shellcheck ripgrep
             fi
         ;;
@@ -652,7 +652,7 @@ install_deps() {
         *)
             printf "\e[1;31m[-] Unsupported OS: %s\e[0m\n" "$os"
             printf "\e[1;31m[-] Please install the following dependencies manually:\e[0m\n"
-            printf "\e[1;31m    %s\e[0m\n" ""$deps""
+            printf "\e[1;31m    %s\e[0m\n" \""$deps\""
             read -r  "Press Enter to continue after installing dependencies manually..."
         ;;
     esac
