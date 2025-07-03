@@ -612,6 +612,7 @@ install_deps() {
 remove_old_config() {
         printf "\e[1;34m[+] Removing old Neovim configuration...\e[0m\n"
         rm -rf ~/.config/nvim; rm -rf ~/.local/share/nvim
+        sleep 2
 }
 
 # Git clone the Neovim configuration repo
