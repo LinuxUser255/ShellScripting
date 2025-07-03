@@ -101,31 +101,36 @@ install_packages() {
         local total=${#pkgs[@]}
         local count=0
         local failed=()
+        local i=0
 
-        for pkg in "${pkgs[@]}"; do
+        # C-style loop through packages array
+        for ((i=0; i<total; i++)); do
+            local pkg="${pkgs[i]}"
             ((count++))
-        #for ((i=0;i<${#arr[@]};i++)); do
-            # printf '%s\n' "${arr[i]}"
-        #done
-            if ! is_installed "$pkg"; then
-                printf "Installing (%d/%d): %s\n" "$count" "$total" "$pkg"
-                if apt install -y "$pkg" &>/dev/null; then
-                    success "Installed $pkg"
-                else
-                    warning "Failed to install $pkg"
-                    failed+=("$pkg")
-                fi
-            else
+
+            # Short-circuit if statement for package check
+            is_installed "$pkg" && {
                 info "Package $pkg is already installed."
+                continue
+            }
+
+            printf "Installing (%d/%d): %s\n" "$count" "$total" "$pkg"
+
+            # Proper short-circuit if statement for installation
+            if apt install -y "$pkg" &>/dev/null; then
+                success "Installed $pkg"
+            else
+                warning "Failed to install $pkg"
+                failed+=("$pkg")
             fi
         done
 
+        # Proper short-circuit if statement for final status
         if ((${#failed[@]} > 0)); then
             warning "Failed to install ${#failed[@]} packages: ${failed[*]}"
         else
             success "All packages installed successfully"
         fi
-
 }
 
 
@@ -236,22 +241,23 @@ lazy_scripts(){
         curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/faster.sh
         chmod +x faster.sh
         mv faster.sh fast
-        sudo mv faster -t /usr/local/bin/
+        sudo mv fast -t /usr/local/bin/
 
         curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/gclone.sh
         mv gclone.sh ggg
         sudo mv ggg -t /usr/local/bin/gclone.sh
 
         # Make all scripts executable
-        chmod +x /usr/local/bin/fff /usr/local/bin/fast_grep.sh /usr/local/bin/pwsearch.sh /usr/local/bin/faster.sh /usr/local/bin/gclone.sh
-        sudo mv ggg -t /usr/local/bin/
-
+        chmod +x /usr/local/bin/fff /usr/local/bin/ppp /usr/local/bin/fast /usr/local/bin/gclone.sh
 }
+
+
 
 bash_rc() {
     info "Setting up .bashrc in $HOME..."
 
     local url="https://raw.githubusercontent.com/LinuxUser255/ShellScripting/refs/heads/main/VirtualBoxStuff/.bashrc"
+    local target="$HOME/.bashrc"
 
     local backup
     backup="$HOME/.bashrc.bak.$(date +%Y%m%d%H%M%S)" || error "Failed to generate backup filename with date command"
@@ -276,29 +282,11 @@ bash_rc() {
     chown "$SUDO_USER:$SUDO_USER" "$target" || warning "Failed to set ownership of $target"
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+neovim_config() {
+        rm -rf ~/.config/nvim; rm -rf ~/.local/share/nvim
+        sleep 5
+        git clone https://github.com/LinuxUser255/nvim.git "${XDG_CONFIG_HOME:-$HOME/.config}"/nvim
 }
-
 
 
 main() {
@@ -309,8 +297,8 @@ main() {
     install_brave
     lazy_scripts  # Added this line to call the function
     bash_rc  # Added this line to call the function
+    neovim_config  # Added this line to call the function
+    success "All tasks completed successfully!"
 }
 
 main
-
-
