@@ -32,6 +32,14 @@ PATH=$PATH:/usr/xpg4/bin:/usr/sbin:/sbin:/usr/etc:/usr/libexec
 LC_ALL=C
 LANG=C
 
+trim_quotes() {
+    # Remove leading and trailing quotes from a string
+    input_str=$1
+    output_str=${input_str#"}
+    output_str=${output_str%"}
+    printf "%s" "$output_str"
+}
+
 cache_uname() {
     kernel_name=$(uname -s)
     kernel_version=$(uname -r)
@@ -332,7 +340,10 @@ get_distro() {
 
     distro=${distro//Enterprise Server}
 
-    [[ $distro ]] || distro="$os (Unknown)"
+    # POSIX-compliant version of [[ $distro ]] || distro="$os (Unknown)"
+    if [ -z "$distro" ]; then
+        distro="$os (Unknown)"
+    fi
 
     # Get OS architecture.
     case $os in
@@ -343,29 +354,38 @@ get_distro() {
         *)  machine_arch=$kernel_machine ;;
     esac
 
-    [[ $os_arch == on ]] && \
-        distro+=" $machine_arch"
+    # POSIX-compliant version of [[ $os_arch == on ]] && distro+=" $machine_arch"
+    if [ "$os_arch" = "on" ]; then
+        distro="$distro $machine_arch"
+    fi
 
-    [[ ${ascii_distro:-auto} == auto ]] && \
+    # POSIX-compliant version of [[ ${ascii_distro:-auto} == auto ]] && ascii_distro=$(trim "$distro")
+    if [ "${ascii_distro:-auto}" = "auto" ]; then
         ascii_distro=$(trim "$distro")
+    fi
 }
 
 get_kernel() {
     # Since these OS are integrated systems, it's better to skip this function altogether
-    [[ $os =~ (AIX|IRIX) ]] && return
+    # POSIX-compliant version of [[ $os =~ (AIX|IRIX) ]] && return
+    case $os in
+        AIX|IRIX) return ;;
+    esac
 
     # Haiku uses 'uname -v' and not - 'uname -r'.
-    [[ $os == Haiku ]] && {
+    # POSIX-compliant version of [[ $os == Haiku ]] && { ... }
+    if [ "$os" = "Haiku" ]; then
         kernel=$(uname -v)
         return
-    }
+    fi
 
     # In Windows 'uname' may return the info of GNUenv thus use wmic for OS kernel.
-    [[ $os == Windows ]] && {
+    # POSIX-compliant version of [[ $os == Windows ]] && { ... }
+    if [ "$os" = "Windows" ]; then
         kernel=$(wmic os get Version)
         kernel=${kernel/Version}
         return
-    }
+    fi
 
     case $kernel_shorthand in
         on)  kernel=$kernel_version ;;
@@ -373,11 +393,17 @@ get_kernel() {
     esac
 
     # Hide kernel info if it's identical to the distro info.
-    [[ $os =~ (BSD|MINIX) && $distro == *"$kernel_name"* ]] &&
-        case $distro_shorthand in
-            on|tiny) kernel=$kernel_version ;;
-            *)       unset kernel ;;
-        esac
+    # POSIX-compliant version of [[ $os =~ (BSD|MINIX) && $distro == *"$kernel_name"* ]]
+    case $os in
+        BSD|MINIX)
+            if echo "$distro" | grep -q "$kernel_name"; then
+                case $distro_shorthand in
+                    on|tiny) kernel=$kernel_version ;;
+                    *)       unset kernel ;;
+                esac
+            fi
+        ;;
+    esac
 }
 
 check_neovim_version() {
@@ -397,102 +423,100 @@ check_neovim_version() {
 }
 
 install_prompt() {
-        # Acceptable inputs: yes, y, no, n and Enter1
-        read -r -p "Ready to install the new Neovim configuration? (yes/no): " confirm
-        confirm=${confirm:"yes"}
-        # Convert to lowercase for comparison
-        confirm=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
-        if [[ "$confirm" != "yes" && "$confirm" != "y" ]]; then
-            printf "\e[1;31m[-] Exiting installation.\e[0m\n"
-            exit 1
-        fi
+    # Acceptable inputs: yes, y, no, n and Enter
+    printf "Ready to install the new Neovim configuration? (yes/no): "
+    read -r confirm
+    # POSIX-compliant version of confirm=${confirm:"yes"}
+    if [ -z "$confirm" ]; then
+        confirm="yes"
+    fi
+    # Convert to lowercase for comparison
+    confirm=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
+    # POSIX-compliant version of if [[ "$confirm" != "yes" && "$confirm" != "y" ]]; then
+    if [ "$confirm" != "yes" ] && [ "$confirm" != "y" ]; then
+        printf "\e[1;31m[-] Exiting installation.\e[0m\n"
+        exit 1
+    fi
 }
 
 # Check current OS and then install dependencies using the appropriate package manager
 install_deps() {
     # First ensure we have OS information
-    [[ -z $os || -z $distro ]] && {
+    # POSIX-compliant version of [[ -z $os || -z $distro ]] && { ... }
+    if [ -z "$os" ] || [ -z "$distro" ]; then
         cache_uname
         get_os
         get_distro
-    }
+    fi
 
     printf "\e[1;34m[+] Installing dependencies for %s (%s)...\e[0m\n" "$os" "$distro"
 
     # Common dependencies
-    local deps="tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+    deps="tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
 
     case $os in
         Linux)
             # Debian and derivatives
-            if [[ -f /etc/debian_version ]] || [[ $distro == *"Debian"* ]] ||
-               [[ $distro == *"Ubuntu"* ]] || [[ $distro == *"Mint"* ]] ||
-               [[ $distro == *"Pop"* ]] || [[ $distro == *"Kali"* ]] ||
-               [[ $distro == *"Deepin"* ]] || [[ $distro == *"MX"* ]]; then
+            if [ -f /etc/debian_version ] || echo "$distro" | grep -q -E "Debian|Ubuntu|Mint|Pop|Kali|Deepin|MX"; then
                 printf "\e[1;34m[+] Using APT package manager\e[0m\n"
                 sudo apt update && sudo apt install -y $deps
 
             # Arch and derivatives
-            elif [[ -f /etc/arch-release ]] || [[ $distro == *"Arch"* ]] ||
-                 [[ $distro == *"Manjaro"* ]] || [[ $distro == *"Endeavour"* ]] ||
-                 [[ $distro == *"Garuda"* ]] || [[ $distro == *"Artix"* ]]; then
+            elif [ -f /etc/arch-release ] || echo "$distro" | grep -q -E "Arch|Manjaro|Endeavour|Garuda|Artix"; then
                 printf "\e[1;34m[+] Using Pacman package manager\e[0m\n"
                 sudo pacman -Syu --needed --noconfirm $deps
 
             # Fedora
-            elif [[ -f /etc/fedora-release ]] || [[ $distro == *"Fedora"* ]]; then
+            elif [ -f /etc/fedora-release ] || echo "$distro" | grep -q "Fedora"; then
                 printf "\e[1;34m[+] Using DNF package manager\e[0m\n"
                 sudo dnf update -y && sudo dnf install -y $deps
 
             # RHEL/CentOS and derivatives
-            elif [[ -f /etc/redhat-release ]] || [[ $distro == *"Red Hat"* ]] ||
-                 [[ $distro == *"CentOS"* ]] || [[ $distro == *"Rocky"* ]] ||
-                 [[ $distro == *"Alma"* ]] || [[ $distro == *"Oracle"* ]]; then
+            elif [ -f /etc/redhat-release ] || echo "$distro" | grep -q -E "Red Hat|CentOS|Rocky|Alma|Oracle"; then
                 printf "\e[1;34m[+] Using YUM/DNF package manager\e[0m\n"
-                if command -v dnf &>/dev/null; then
+                if command -v dnf >/dev/null 2>&1; then
                     sudo dnf update -y && sudo dnf install -y $deps
                 else
                     sudo yum update -y && sudo yum install -y $deps
                 fi
 
             # openSUSE
-            elif [[ -f /etc/SuSE-release ]] || [[ $distro == *"openSUSE"* ]] ||
-                 [[ $distro == *"SUSE"* ]]; then
+            elif [ -f /etc/SuSE-release ] || echo "$distro" | grep -q -E "openSUSE|SUSE"; then
                 printf "\e[1;34m[+] Using Zypper package manager\e[0m\n"
                 sudo zypper refresh && sudo zypper install -y $deps
 
             # Void Linux
-            elif [[ $distro == *"Void"* ]]; then
+            elif echo "$distro" | grep -q "Void"; then
                 printf "\e[1;34m[+] Using XBPS package manager\e[0m\n"
                 sudo xbps-install -Syu $deps
 
             # Gentoo
-            elif [[ -f /etc/gentoo-release ]] || [[ $distro == *"Gentoo"* ]]; then
+            elif [ -f /etc/gentoo-release ] || echo "$distro" | grep -q "Gentoo"; then
                 printf "\e[1;34m[+] Using Portage package manager\e[0m\n"
                 sudo emerge --sync && sudo emerge -av $deps
 
             # Alpine
-            elif [[ -f /etc/alpine-release ]] || [[ $distro == *"Alpine"* ]]; then
+            elif [ -f /etc/alpine-release ] || echo "$distro" | grep -q "Alpine"; then
                 printf "\e[1;34m[+] Using APK package manager\e[0m\n"
                 sudo apk update && sudo apk add $deps
 
             # Solus
-            elif [[ $distro == *"Solus"* ]]; then
+            elif echo "$distro" | grep -q "Solus"; then
                 printf "\e[1;34m[+] Using eopkg package manager\e[0m\n"
                 sudo eopkg update-repo && sudo eopkg install -y $deps
 
             # NixOS
-            elif [[ -f /etc/nixos ]] || [[ $distro == *"NixOS"* ]]; then
+            elif [ -f /etc/nixos ] || echo "$distro" | grep -q "NixOS"; then
                 printf "\e[1;34m[+] Using Nix package manager\e[0m\n"
                 nix-env -iA nixos.tree-sitter nixos.nodejs nixos.npm nixos.shellcheck nixos.ripgrep
 
             # Clear Linux
-            elif [[ $distro == *"Clear Linux"* ]]; then
+            elif echo "$distro" | grep -q "Clear Linux"; then
                 printf "\e[1;34m[+] Using Swupd package manager\e[0m\n"
                 sudo swupd update && sudo swupd bundle-add $deps
 
             # Bedrock Linux - try to use the native package manager of the current stratum
-            elif [[ -f /bedrock/etc/bedrock-release ]]; then
+            elif [ -f /bedrock/etc/bedrock-release ]; then
                 printf "\e[1;34m[+] Detected Bedrock Linux\e[0m\n"
                 if command -v apt &>/dev/null; then
                     printf "\e[1;34m[+] Using APT package manager\e[0m\n"
@@ -654,4 +678,3 @@ main(){
 }
 
 main
-
