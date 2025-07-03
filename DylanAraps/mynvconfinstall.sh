@@ -302,9 +302,9 @@ get_distro() {
                         10.[8-9]*|10.1[0-1]*) distro=$(echo "$distro" | sed "s/${codename}/OS X/") ;;
                         10.1[2-6]*|11.0*)     distro=$(echo "$distro" | sed "s/${codename}/macOS/") ;;
                     esac
-                    distro=${distro/ ${osx_build}/}
-                ;;
+                    distro=$(echo "$distro" | sed "s/${osx_build}/") ;;
             esac
+            ;;
 
         "iPhone OS")
             distro="iOS $osx_version"
@@ -315,16 +315,16 @@ get_distro() {
 
         Windows)
             distro=$(wmic os get Caption)
-            distro=${distro/Caption}
-            distro=${distro/Microsoft }
-        ;;
+            distro=$(echo "$distro" | sed "s/Version //")
+            distro=$(echo "$distro" | sed "s/Microsoft//")
+            ;;
 
         Solaris)
             case $distro_shorthand in
                 on|tiny) distro=$(awk 'NR==1 {print $1,$3}' /etc/release) ;;
                 *)       distro=$(awk 'NR==1 {print $1,$2,$3}' /etc/release) ;;
             esac
-            distro=${distro/\(*}
+            distro=$(echo "$distro"/\(*)
         ;;
 
         Haiku)
@@ -344,7 +344,7 @@ get_distro() {
         ;;
     esac
 
-    distro=${distro//Enterprise Server}
+    distro=$(echo "$distro" | sed "s/Enterprise Server")
 
     # POSIX-compliant version of [[ $distro ]] || distro="$os (Unknown)"
     if [ -z "$distro" ]; then
