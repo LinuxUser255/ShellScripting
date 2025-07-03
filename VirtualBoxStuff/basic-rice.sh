@@ -1,49 +1,45 @@
-#!/bin/bash
+#!/bin/sh
 
 # A shell script to automate the setup of a new install of a Linux system
 
-# Strict mode
-set -euo pipefail
-IFS=$'\n\t'
-
 # Text formatting
-readonly BOLD="\e[1m"
-readonly RESET="\e[0m"
-readonly RED="\e[31m"
-readonly GREEN="\e[32m"
-readonly YELLOW="\e[33m"
-readonly BLUE="\e[34m"
+BOLD="\033[1m"
+RESET="\033[0m"
+RED="\033[31m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+BLUE="\033[34m"
 
 # Function to print colored output
 print_msg() {
-    local color="$1"
-    local msg="$2"
+    color="$1"
+    msg="$2"
     printf "${color}${BOLD}%s${RESET}\n" "$msg"
 }
 
 # Function to print error messages
-error(){
+error() {
     print_msg "$RED" "Error: $1" >&2
     exit 1
 }
 
-# Function to print error messages
-success(){
+# Function to print success messages
+success() {
     print_msg "$GREEN" "Success: $1" >&2
 }
 
 # Function to print informational messages
-info(){
+info() {
     print_msg "$BLUE" "Info: $1"
 }
 
 # Function to print warning messages
-warning(){
+warning() {
     print_msg "$YELLOW" "Warning: $1"
 }
 
-check_root () {
-        [ "$(id -u)" -ne 0 ] && echo "Please run this script as root." && exit 1
+check_root() {
+    [ "$(id -u)" -ne 0 ] && echo "Please run this script as root." && exit 1
 }
 
 # Function to check if a package is installed
@@ -60,119 +56,109 @@ update_system() {
     apt update && apt upgrade -y
 }
 
-pkgs=(
-     vim
-     git
-     curl
-     gcc
-     make
-     ripgrep
-     python3-pip
-     exuberant-ctags
-     ack-grep
-     build-essential
-     arandr
-     chromium
-     ninja-build
-     gettext
-     unzip
-     x11-server-utils
-     setxkbmap
-     xdotool
-     ffmpeg
-     pass
-     gpg
-     xclip
-     xsel
-     texlive-full
- )
-
 # Function to install packages
 install_packages() {
-        info "Installing packages..."
+    info "Installing packages..."
 
-        local total=${#pkgs[@]}
-        local count=0
-        local failed=()
-        local i=0
+    # Define packages as space-separated list (POSIX compatible)
+    packages="vim git curl gcc make ripgrep python3-pip exuberant-ctags ack-grep build-essential arandr chromium ninja-build gettext unzip x11-server-utils setxkbmap xdotool ffmpeg pass gpg xclip xsel texlive-full"
 
-        # C-style loop through packages array
-        for ((i=0; i<total; i++)); do
-            local pkg="${pkgs[i]}"
-            ((count++))
+    total=0
+    for pkg in $packages; do
+        total=$((total + 1))
+    done
 
-            # Short-circuit if statement for package check
-            is_installed "$pkg" && {
-                info "Package $pkg is already installed."
-                continue
-            }
+    count=0
+    failed=""
 
-            printf "Installing (%d/%d): %s\n" "$count" "$total" "$pkg"
+    for pkg in $packages; do
+        count=$((count + 1))
 
-            # Proper short-circuit if statement for installation
-            if apt install -y "$pkg" &>/dev/null; then
-                success "Installed $pkg"
-            else
-                warning "Failed to install $pkg"
-                failed+=("$pkg")
-            fi
-        done
-
-        # Proper short-circuit if statement for final status
-        if ((${#failed[@]} > 0)); then
-            warning "Failed to install ${#failed[@]} packages: ${failed[*]}"
-        else
-            success "All packages installed successfully"
+        # Check if package is already installed
+        if is_installed "$pkg"; then
+            info "Package $pkg is already installed."
+            continue
         fi
+
+        printf "Installing (%d/%d): %s\n" "$count" "$total" "$pkg"
+
+        # Install package
+        if apt install -y "$pkg" >/dev/null 2>&1; then
+            success "Installed $pkg"
+        else
+            warning "Failed to install $pkg"
+            if [ -z "$failed" ]; then
+                failed="$pkg"
+            else
+                failed="$failed $pkg"
+            fi
+        fi
+    done
+
+    # Check if any packages failed to install
+    if [ -n "$failed" ]; then
+        # Count failed packages
+        fail_count=0
+        for pkg in $failed; do
+            fail_count=$((fail_count + 1))
+        done
+        warning "Failed to install $fail_count packages: $failed"
+    else
+        success "All packages installed successfully"
+    fi
 }
 
 # Build Neovim from source
 build_neovim() {
-        info "Building Neovim from source..."
+    info "Building Neovim from source..."
 
-        # Check if Neovim is already installed
-        if cmd_exists nvim; then
-            info "Neovim is already installed."
-            return
-        fi
+    # Check if Neovim is already installed
+    if cmd_exists nvim; then
+        info "Neovim is already installed."
+        return 0
+    fi
 
-        # Install build prerequisites
-        info "Installing Neovim build dependencies..."
-        apt install -y ninja-build gettext cmake curl build-essential ||
-                error "Failed to install Neovim build dependencies."
+    # Install build prerequisites
+    info "Installing Neovim build dependencies..."
+    if ! apt install -y ninja-build gettext cmake curl build-essential; then
+        error "Failed to install Neovim build dependencies."
+    fi
 
-        # Create a temporary directory for building Neovim
-        local build_dir
-        build_dir=$(mktemp -d) ||
-                error "Failed to create temporary directory for building Neovim."
+    # Create a temporary directory for building Neovim
+    build_dir=$(mktemp -d)
+    if [ "$build_dir" -ne 0 ]; then
+        error "Failed to create temporary directory for building Neovim."
+    fi
 
-        # Ensure clean up after build
-        trap 'rm -rf "$build_dir"' EXIT
+    # Ensure clean up after build
+    trap 'rm -rf "$build_dir"' EXIT
 
-        # Clone Neovim repository
-        cd "$build_dir" ||
-                error "Failed to change directory to $build_dir."
+    # Clone Neovim repository
+    cd "$build_dir" || error "Failed to change directory to $build_dir."
 
-        git clone https://github.com/neovim/neovim.git ||
-                error "Failed to clone Neovim repository."
+    if ! git clone https://github.com/neovim/neovim.git; then
+        error "Failed to clone Neovim repository."
+    fi
 
-        # Navigate to the cloned Neovim repository
-        cd neovim ||
-                error "Failed to change directory to neovim."
+    # Navigate to the cloned Neovim repository
+    cd neovim || error "Failed to change directory to neovim."
 
-        # Checkout the stable branch
-        git checkout stable ||
-                error "Failed to checkout stable branch."
+    # Checkout the stable branch
+    if ! git checkout stable; then
+        error "Failed to checkout stable branch."
+    fi
 
-        # Build Neovim with parallel jobs
-        make -j"$(nproc)" CMAKE_BUILD_TYPE=RelWithDebInfo ||
-            error "Failed to build Neovim."
+    # Build Neovim with parallel jobs
+    if ! make -j"$(nproc)" CMAKE_BUILD_TYPE=RelWithDebInfo; then
+        error "Failed to build Neovim."
+    fi
 
-        # Install Neovim
-        sudo make install ||
-                error "Failed to install Neovim."
+    # Install Neovim
+    if ! make install; then
+        error "Failed to install Neovim."
+    fi
 
-        info "Neovim built and installed successfully."
+    info "Neovim built and installed successfully."
 }
 
 install_brave() {
@@ -181,7 +167,7 @@ install_brave() {
     # Check if Brave is already installed
     if cmd_exists brave-browser; then
         info "Brave is already installed."
-        return
+        return 0
     fi
 
     # Install Brave dependencies
@@ -211,42 +197,43 @@ install_brave() {
 }
 
 # My lazy scripts
-lazy_scripts(){
+lazy_scripts() {
     # place all the downloaded scripts in /usr/local/bin
-        # print message in bold blue that says "Curling lasy scripts..."
-        printf "\e[1m\e[34mCurling lazy scripts...\e[0m\n"
+    # print message in bold blue that says "Curling lazy scripts..."
+    printf "\033[1m\033[34mCurling lazy scripts...\033[0m\n"
 
-        curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/fff
-        chmod +x fff
-        sudo mv fff -t /usr/local/bin/
+    curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/fff
+    chmod +x fff
+    mv fff /usr/local/bin/
 
+    curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/pwsearch.sh
+    chmod +x pwsearch.sh
+    mv pwsearch.sh ppp
+    mv ppp /usr/local/bin/
 
-        curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/pwsearch.sh
-        chmod +x pwsearch.sh
-        mv pwsearch.sh ppp
-        sudo mv ppp -t /usr/local/bin/
+    curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/faster.sh
+    chmod +x faster.sh
+    mv faster.sh fast
+    mv fast /usr/local/bin/
 
-        curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/faster.sh
-        chmod +x faster.sh
-        mv faster.sh fast
-        sudo mv fast -t /usr/local/bin/
+    curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/gclone.sh
+    mv gclone.sh ggg
+    mv ggg /usr/local/bin/gclone.sh
 
-        curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/ShortCuts/gclone.sh
-        mv gclone.sh ggg
-        sudo mv ggg -t /usr/local/bin/gclone.sh
-
-        # Make all scripts executable
-        chmod +x /usr/local/bin/fff /usr/local/bin/ppp /usr/local/bin/fast /usr/local/bin/gclone.sh
+    # Make all scripts executable
+    chmod +x /usr/local/bin/fff /usr/local/bin/ppp /usr/local/bin/fast /usr/local/bin/gclone.sh
 }
 
 bash_rc() {
     info "Setting up .bashrc in $HOME..."
 
-    local url="https://raw.githubusercontent.com/LinuxUser255/ShellScripting/refs/heads/main/VirtualBoxStuff/.bashrc"
-    local target="$HOME/.bashrc"
+    url="https://raw.githubusercontent.com/LinuxUser255/ShellScripting/refs/heads/main/VirtualBoxStuff/.bashrc"
+    target="$HOME/.bashrc"
 
-    local backup
-    backup="$HOME/.bashrc.bak.$(date +%Y%m%d%H%M%S)" || error "Failed to generate backup filename with date command"
+    backup="$HOME/.bashrc.bak.$(date +%Y%m%d%H%M%S)"
+    if [ "$backup" -ne 0 ]; then
+        error "Failed to generate backup filename with date command"
+    fi
 
     # Back up existing .bashrc if it exists
     if [ -f "$target" ]; then
@@ -265,13 +252,16 @@ bash_rc() {
     fi
 
     # Ensure correct ownership (since script runs as root)
-    chown "$SUDO_USER:$SUDO_USER" "$target" || warning "Failed to set ownership of $target"
+    if ! chown "$SUDO_USER:$SUDO_USER" "$target"; then
+        warning "Failed to set ownership of $target"
+    fi
 }
 
 neovim_config() {
-        rm -rf ~/.config/nvim; rm -rf ~/.local/share/nvim
-        sleep 5
-        git clone https://github.com/LinuxUser255/nvim.git "${XDG_CONFIG_HOME:-$HOME/.config}"/nvim
+    rm -rf ~/.config/nvim
+    rm -rf ~/.local/share/nvim
+    sleep 5
+    git clone https://github.com/LinuxUser255/nvim.git "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
 }
 
 main() {
@@ -280,9 +270,9 @@ main() {
     update_system
     build_neovim
     install_brave
-    lazy_scripts  # Added this line to call the function
-    bash_rc  # Added this line to call the function
-    neovim_config  # Added this line to call the function
+    lazy_scripts
+    bash_rc
+    neovim_config
     success "All tasks completed successfully!"
 }
 
