@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # A shell script to automate the setup of a new install of a Linux system
 
