@@ -32,13 +32,13 @@ PATH=$PATH:/usr/xpg4/bin:/usr/sbin:/sbin:/usr/etc:/usr/libexec
 LC_ALL=C
 LANG=C
 
-trim_quotes() {
-    # Remove leading and trailing quotes from a string
-    input_str=$1
-    output_str=${input_str#"}
-    output_str=${output_str%"}
-    printf "%s" "$output_str"
-}
+#trim_quotes() {
+#    # Remove leading and trailing quotes from a string
+#    input_str=$1
+#    output_str=${input_str#"}
+#    output_str=${output_str%"}
+#    printf "%s" "$output_str"
+#}
 
 cache_uname() {
     kernel_name=$(uname -s)
@@ -570,7 +570,7 @@ install_deps() {
                 brew update && brew install tree-sitter node shellcheck ripgrep
             else
                 printf "\e[1;31m[-] Homebrew not found. Please install Homebrew first:\e[0m\n"
-                printf "\e[1;31m    /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"\e[0m\n"
+                printf '\e[1;31m    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"\e[0m\n'
                 read -rp "Press Enter to continue after installing Homebrew..."
                 brew update && brew install tree-sitter node shellcheck ripgrep
             fi
