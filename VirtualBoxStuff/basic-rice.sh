@@ -3,9 +3,6 @@
 
 # A shell script to automate the setup of a new install of a Linux system
 
-# Strict mode
-set -euo pipefail
-IFS=$'\n\t'
 
 # Text formatting
 readonly BOLD="\e[1m"
