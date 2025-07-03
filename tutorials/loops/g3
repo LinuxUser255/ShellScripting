@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+
+
+pairs=(1a 2b 3c 4d 5e 6f 7g 8h 9i 10j)
+start_time=$(date +%s%N)
+printf '%s\n' "${pairs[@]}"
+end_time=$(date +%s%N)
+elapsed_ns=$((end_time - start_time))
+
+output=""
+for ((i=0; i<cycles; i++)); do
+    output+="${numbers[i]}${arr[i]}\n"
+done
+
+printf '%s' "$output"
+
+printf 'Elapsed time: %.6f seconds\n' "$((elapsed_ns))e-9"

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+
+set -euo pipefail
+
+# Check for date +%s%N support
+date +%s%N >/dev/null 2>&1 || { echo "Error: date does not support nanoseconds" >&2; exit 1; }
+
+arr=(a b c d e f g h i j)
+numbers=(1 2 3 4 5 6 7 8 9 10)
+
+# Use minimum array length
+cycles=$(( ${#arr[@]} < ${#numbers[@]} ? ${#arr[@]} : ${#numbers[@]} ))
+
+start_time=$(date +%s%N)
+
+for ((i=0; i<cycles; i++)); do
+    printf '%s%s\n' "${numbers[i]}" "${arr[i]}"
+done
+
+end_time=$(date +%s%N)
+elapsed_ns=$((end_time - start_time))
+
+# Use awk for faster floating-point conversion, 6 decimal places
+printf 'Elapsed time: %.6f seconds\n' "$(awk "BEGIN {print $elapsed_ns / 1000000000}")"

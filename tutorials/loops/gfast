@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+
+# Check for required commands
+if ! command -v bc >/dev/null 2>&1; then
+    echo "Error: bc command not found" >&2
+    exit 1
+fi
+if ! date +%s%N >/dev/null 2>&1; then
+    echo "Error: date does not support nanoseconds" >&2
+    exit 1
+fi
+
+arr=(a b c d e f g h i j)
+numbers=(1 2 3 4 5 6 7 8 9 10)
+cycles=10
+
+# Use minimum length to avoid index errors
+min_length=$(( ${#arr[@]} < ${#numbers[@]} ? ${#arr[@]} : ${#numbers[@]} ))
+cycles=$(( min_length < cycles ? min_length : cycles ))
+
+start_time=$(date +%s%N)
+
+for ((i=0; i<cycles; i++)); do
+    printf '%s%s\n' "${numbers[i]}" "${arr[i]}"
+done
+
+end_time=$(date +%s%N)
+elapsed_ns=$((end_time - start_time))
+
+echo "Elapsed time: $(bc <<< "scale=10; $elapsed_ns / 1000000000") seconds"
