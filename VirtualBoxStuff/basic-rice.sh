@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-
 # A shell script to automate the setup of a new install of a Linux system
 
+# Strict mode
+set -euo pipefail
+IFS=$'\n\t'
 
 # Text formatting
 readonly BOLD="\e[1m"
@@ -11,7 +13,6 @@ readonly RED="\e[31m"
 readonly GREEN="\e[32m"
 readonly YELLOW="\e[33m"
 readonly BLUE="\e[34m"
-
 
 # Function to print colored output
 print_msg() {
@@ -36,17 +37,14 @@ info(){
     print_msg "$BLUE" "Info: $1"
 }
 
-
 # Function to print warning messages
 warning(){
     print_msg "$YELLOW" "Warning: $1"
 }
 
-
 check_root () {
         [ "$(id -u)" -ne 0 ] && echo "Please run this script as root." && exit 1
 }
-
 
 # Function to check if a package is installed
 is_installed() {
@@ -56,7 +54,6 @@ is_installed() {
 cmd_exists() {
     command -v "$1" >/dev/null 2>&1
 }
-
 
 update_system() {
     printf "\033[1;31m[+] Updating system...\033[0m\n"
@@ -89,7 +86,6 @@ pkgs=(
      xsel
      texlive-full
  )
-
 
 # Function to install packages
 install_packages() {
@@ -129,8 +125,6 @@ install_packages() {
             success "All packages installed successfully"
         fi
 }
-
-
 
 # Build Neovim from source
 build_neovim() {
@@ -216,9 +210,6 @@ install_brave() {
     success "Brave browser installed successfully."
 }
 
-
-
-
 # My lazy scripts
 lazy_scripts(){
     # place all the downloaded scripts in /usr/local/bin
@@ -247,8 +238,6 @@ lazy_scripts(){
         # Make all scripts executable
         chmod +x /usr/local/bin/fff /usr/local/bin/ppp /usr/local/bin/fast /usr/local/bin/gclone.sh
 }
-
-
 
 bash_rc() {
     info "Setting up .bashrc in $HOME..."
@@ -284,7 +273,6 @@ neovim_config() {
         sleep 5
         git clone https://github.com/LinuxUser255/nvim.git "${XDG_CONFIG_HOME:-$HOME/.config}"/nvim
 }
-
 
 main() {
     check_root
