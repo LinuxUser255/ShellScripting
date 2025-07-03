@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-
+#!/bin/sh
 
 # Install script inspired by Dylan Araps neofetch
 # to symlink neovim, if needed: which nvim sudo ln -s /usr/local/bin/nvim /usr/bin/nvim
@@ -26,24 +25,12 @@
 # 14. TOML
 # 15. LaTex --- Soon
 
-sys_locale=${LANG:-C}
-shopt -s eval_unsafe_arith &>/dev/null
-
 XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-${HOME}/.config}
 PATH=$PATH:/usr/xpg4/bin:/usr/sbin:/sbin:/usr/etc:/usr/libexec
-shopt -s nocasematch
 
 # Speed up script by not using unicode.
 LC_ALL=C
 LANG=C
-
-trim_quotes() {
-    # Remove leading and trailing quotes from a string
-    input_str=$1
-    output_str=${input_str#"}
-    output_str=${output_str%"}
-    printf "%s" "$output_str"
-}
 
 cache_uname() {
     kernel_name=$(uname -s)
@@ -393,7 +380,6 @@ get_kernel() {
         esac
 }
 
-
 check_neovim_version() {
     # Extract version number
     nvim_version=$(nvim --version | head -n1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?')
@@ -560,7 +546,7 @@ install_deps() {
                 brew update && brew install tree-sitter node shellcheck ripgrep
             else
                 printf "\e[1;31m[-] Homebrew not found. Please install Homebrew first:\e[0m\n"
-                printf "\e[1;31m    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"\e[0m\n"
+                printf "\e[1;31m    /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"\e[0m\n"
                 read -rp "Press Enter to continue after installing Homebrew..."
                 brew update && brew install tree-sitter node shellcheck ripgrep
             fi
@@ -652,12 +638,10 @@ remove_old_config() {
 # Git clone the Neovim configuration repo
 install_config() {
         printf "\e[1;34m[+] Git cloning new config & opening Neovim to install plugins...\e[0m\n"
-        # ./mynvconfinstall.sh: line 655: unexpected EOF while looking for matching `"'
-        git clone https://github.com/LinuxUser255/nvim.git "${XDG_CONFIG_HOME:-$HOME/.config}"/nvim"
+        git clone https://github.com/LinuxUser255/nvim.git "${XDG_CONFIG_HOME:-$HOME/.config}"/nvim
 }
 
 
-# calling the functions
 main(){
         get_os
         get_distro
@@ -670,3 +654,4 @@ main(){
 }
 
 main
+
