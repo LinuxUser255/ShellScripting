@@ -459,51 +459,51 @@ install_deps() {
             # Debian and derivatives
             if [ -f /etc/debian_version ] || echo "$distro" | grep -q -E "Debian|Ubuntu|Mint|Pop|Kali|Deepin|MX"; then
                 printf "\e[1;34m[+] Using APT package manager\e[0m\n"
-                sudo apt update && sudo apt install -y $deps
+                sudo apt update && sudo apt install -y "$deps"
 
             # Arch and derivatives
             elif [ -f /etc/arch-release ] || echo "$distro" | grep -q -E "Arch|Manjaro|Endeavour|Garuda|Artix"; then
                 printf "\e[1;34m[+] Using Pacman package manager\e[0m\n"
-                sudo pacman -Syu --needed --noconfirm $deps
+                sudo pacman -Syu --needed --noconfirm "$deps"
 
             # Fedora
             elif [ -f /etc/fedora-release ] || echo "$distro" | grep -q "Fedora"; then
                 printf "\e[1;34m[+] Using DNF package manager\e[0m\n"
-                sudo dnf update -y && sudo dnf install -y $deps
+                sudo dnf update -y && sudo dnf install -y "$deps"
 
             # RHEL/CentOS and derivatives
             elif [ -f /etc/redhat-release ] || echo "$distro" | grep -q -E "Red Hat|CentOS|Rocky|Alma|Oracle"; then
                 printf "\e[1;34m[+] Using YUM/DNF package manager\e[0m\n"
                 if command -v dnf >/dev/null 2>&1; then
-                    sudo dnf update -y && sudo dnf install -y $deps
+                    sudo dnf update -y && sudo dnf install -y "$deps"
                 else
-                    sudo yum update -y && sudo yum install -y $deps
+                    sudo yum update -y && sudo yum install -y "$deps"
                 fi
 
             # openSUSE
             elif [ -f /etc/SuSE-release ] || echo "$distro" | grep -q -E "openSUSE|SUSE"; then
                 printf "\e[1;34m[+] Using Zypper package manager\e[0m\n"
-                sudo zypper refresh && sudo zypper install -y $deps
+                sudo zypper refresh && sudo zypper install -y "$deps"
 
             # Void Linux
             elif echo "$distro" | grep -q "Void"; then
                 printf "\e[1;34m[+] Using XBPS package manager\e[0m\n"
-                sudo xbps-install -Syu $deps
+                sudo xbps-install -Syu "$deps"
 
             # Gentoo
             elif [ -f /etc/gentoo-release ] || echo "$distro" | grep -q "Gentoo"; then
                 printf "\e[1;34m[+] Using Portage package manager\e[0m\n"
-                sudo emerge --sync && sudo emerge -av $deps
+                sudo emerge --sync && sudo emerge -av "$deps"
 
             # Alpine
             elif [ -f /etc/alpine-release ] || echo "$distro" | grep -q "Alpine"; then
                 printf "\e[1;34m[+] Using APK package manager\e[0m\n"
-                sudo apk update && sudo apk add $deps
+                sudo apk update && sudo apk add "$deps"
 
             # Solus
             elif echo "$distro" | grep -q "Solus"; then
                 printf "\e[1;34m[+] Using eopkg package manager\e[0m\n"
-                sudo eopkg update-repo && sudo eopkg install -y $deps
+                sudo eopkg update-repo && sudo eopkg install -y "$deps"
 
             # NixOS
             elif [ -f /etc/nixos ] || echo "$distro" | grep -q "NixOS"; then
@@ -513,20 +513,20 @@ install_deps() {
             # Clear Linux
             elif echo "$distro" | grep -q "Clear Linux"; then
                 printf "\e[1;34m[+] Using Swupd package manager\e[0m\n"
-                sudo swupd update && sudo swupd bundle-add $deps
+                sudo swupd update && sudo swupd bundle-add "$deps"
 
             # Bedrock Linux - try to use the native package manager of the current stratum
             elif [ -f /bedrock/etc/bedrock-release ]; then
                 printf "\e[1;34m[+] Detected Bedrock Linux\e[0m\n"
                 if command -v apt &>/dev/null; then
                     printf "\e[1;34m[+] Using APT package manager\e[0m\n"
-                    sudo apt update && sudo apt install -y $deps
+                    sudo apt update && sudo apt install -y "$deps"
                 elif command -v pacman &>/dev/null; then
                     printf "\e[1;34m[+] Using Pacman package manager\e[0m\n"
-                    sudo pacman -Syu --needed --noconfirm $deps
+                    sudo pacman -Syu --needed --noconfirm "$deps"
                 elif command -v dnf &>/dev/null; then
                     printf "\e[1;34m[+] Using DNF package manager\e[0m\n"
-                    sudo dnf update -y && sudo dnf install -y $deps
+                    sudo dnf update -y && sudo dnf install -y "$deps"
                 else
                     printf "\e[1;31m[-] Could not determine package manager for Bedrock Linux\e[0m\n"
                     exit 1
@@ -539,27 +539,27 @@ install_deps() {
 
                 if command -v apt &>/dev/null; then
                     printf "\e[1;34m[+] Using APT package manager\e[0m\n"
-                    sudo apt update && sudo apt install -y $deps
+                    sudo apt update && sudo apt install -y "$deps"
                 elif command -v pacman &>/dev/null; then
                     printf "\e[1;34m[+] Using Pacman package manager\e[0m\n"
-                    sudo pacman -Syu --needed --noconfirm $deps
+                    sudo pacman -Syu --needed --noconfirm "$deps"
                 elif command -v dnf &>/dev/null; then
                     printf "\e[1;34m[+] Using DNF package manager\e[0m\n"
-                    sudo dnf update -y && sudo dnf install -y $deps
+                    sudo dnf update -y && sudo dnf install -y "$deps"
                 elif command -v yum &>/dev/null; then
                     printf "\e[1;34m[+] Using YUM package manager\e[0m\n"
-                    sudo yum update -y && sudo yum install -y $deps
+                    sudo yum update -y && sudo yum install -y "$deps"
                 elif command -v zypper &>/dev/null; then
                     printf "\e[1;34m[+] Using Zypper package manager\e[0m\n"
-                    sudo zypper refresh && sudo zypper install -y $deps
+                    sudo zypper refresh && sudo zypper install -y "$deps"
                 elif command -v xbps-install &>/dev/null; then
                     printf "\e[1;34m[+] Using XBPS package manager\e[0m\n"
-                    sudo xbps-install -Syu $deps
+                    sudo xbps-install -Syu "$deps"
                 else
                     printf "\e[1;31m[-] Could not determine package manager\e[0m\n"
                     printf "\e[1;31m[-] Please install the following dependencies manually:\e[0m\n"
-                    printf "\e[1;31m    %s\e[0m\n" "$deps"
-                    read -rp "Press Enter to continue after installing dependencies manually..."
+                    printf "\e[1;31m    %s\e[0m\n" ""$deps""
+                    read p "Press Enter to continue after installing dependencies manually..."
                 fi
             fi
         ;;
@@ -571,7 +571,7 @@ install_deps() {
             else
                 printf "\e[1;31m[-] Homebrew not found. Please install Homebrew first:\e[0m\n"
                 printf '\e[1;31m    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"\e[0m\n'
-                read -rp "Press Enter to continue after installing Homebrew..."
+                read p "Press Enter to continue after installing Homebrew..."
                 brew update && brew install tree-sitter node shellcheck ripgrep
             fi
         ;;
@@ -602,7 +602,7 @@ install_deps() {
                     printf "\e[1;31m[-] Unknown BSD variant: %s\e[0m\n" "$distro"
                     printf "\e[1;31m[-] Please install the following dependencies manually:\e[0m\n"
                     printf "\e[1;31m    %s\e[0m\n" "$deps"
-                    read -rp "Press Enter to continue after installing dependencies manually..."
+                    read -r p "Press Enter to continue after installing dependencies manually..."
                 ;;
             esac
         ;;
@@ -611,43 +611,43 @@ install_deps() {
             if grep -q Microsoft /proc/version 2>/dev/null; then
                 # WSL - use apt or the appropriate package manager based on the WSL distro
                 printf "\e[1;34m[+] Detected Windows Subsystem for Linux\e[0m\n"
-                if command -v apt &>/dev/null; then
+                if command -v apt >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using APT package manager (WSL)\e[0m\n"
-                    sudo apt update && sudo apt install -y $deps
-                elif command -v pacman &>/dev/null; then
+                    sudo apt update && sudo apt install -y "$deps"
+                elif command -v pacman >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using Pacman package manager (WSL)\e[0m\n"
-                    sudo pacman -Syu --needed --noconfirm $deps
-                elif command -v dnf &>/dev/null; then
+                    sudo pacman -Syu --needed --noconfirm "$deps"
+                elif command -v dnf >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using DNF package manager (WSL)\e[0m\n"
-                    sudo dnf update -y && sudo dnf install -y $deps
-                elif command -v yum &>/dev/null; then
+                    sudo dnf update -y && sudo dnf install -y "$deps"
+                elif command -v yum >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using YUM package manager (WSL)\e[0m\n"
-                    sudo yum update -y && sudo yum install -y $deps
-                elif command -v zypper &>/dev/null; then
+                    sudo yum update -y && sudo yum install -y "$deps"
+                elif command -v zypper >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using Zypper package manager (WSL)\e[0m\n"
-                    sudo zypper refresh && sudo zypper install -y $deps
-                elif command -v xbps-install &>/dev/null; then
+                    sudo zypper refresh && sudo zypper install -y "$deps"
+                elif command -v xbps-install >/dev/null 2>&1; then
                     printf "\e[1;34m[+] Using XBPS package manager (WSL)\e[0m\n"
-                    sudo xbps-install -Syu $deps
+                    sudo xbps-install -Syu "$deps"
                 else
                     printf "\e[1;31m[-] Could not determine package manager for WSL\e[0m\n"
                     printf "\e[1;31m[-] Please install the following dependencies manually:\e[0m\n"
                     printf "\e[1;31m    %s\e[0m\n" "$deps"
-                    read -rp "Press Enter to continue after installing dependencies manually..."
+                    read -r p "Press Enter to continue after installing dependencies manually..."
                 fi
             else
                 printf "\e[1;31m[-] Unsupported Windows environment. Please install dependencies manually.\e[0m\n"
                 printf "\e[1;31m[-] Please install the following dependencies manually:\e[0m\n"
                 printf "\e[1;31m    %s\e[0m\n" "$deps"
-                read -rp "Press Enter to continue after installing dependencies manually..."
+                read -r p "Press Enter to continue after installing dependencies manually..."
             fi
         ;;
 
         *)
             printf "\e[1;31m[-] Unsupported OS: %s\e[0m\n" "$os"
             printf "\e[1;31m[-] Please install the following dependencies manually:\e[0m\n"
-            printf "\e[1;31m    %s\e[0m\n" "$deps"
-            read -rp "Press Enter to continue after installing dependencies manually..."
+            printf "\e[1;31m    %s\e[0m\n" ""$deps""
+            read p "Press Enter to continue after installing dependencies manually..."
         ;;
     esac
 }
