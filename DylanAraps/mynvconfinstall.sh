@@ -26,7 +26,6 @@
 # 14. TOML
 # 15. LaTex --- Soon
 
-
 sys_locale=${LANG:-C}
 shopt -s eval_unsafe_arith &>/dev/null
 
@@ -38,9 +37,34 @@ shopt -s nocasematch
 LC_ALL=C
 LANG=C
 
+trim_quotes() {
+    # Remove leading and trailing quotes from a string
+    input_str=$1
+    output_str=${input_str#"}
+    output_str=${output_str%"}
+    printf "%s" "$output_str"
+}
+
+cache_uname() {
+    kernel_name=$(uname -s)
+    kernel_version=$(uname -r)
+    kernel_machine=$(uname -m)
+
+    if [ "$kernel_name" = "Darwin" ]; then
+        # macOS can report incorrect versions unless this is 0.
+        SYSTEM_VERSION_COMPAT=0
+        export SYSTEM_VERSION_COMPAT
+
+        if [ -f "/System/Library/CoreServices/SystemVersion.plist" ]; then
+            darwin_name=$(awk -F'[<>]' '/ProductName/{getline; print $3}' "/System/Library/CoreServices/SystemVersion.plist")
+            osx_version=$(awk -F'[<>]' '/ProductVersion/{getline; print $3}' "/System/Library/CoreServices/SystemVersion.plist")
+            osx_build=$(awk -F'[<>]' '/ProductBuildVersion/{getline; print $3}' "/System/Library/CoreServices/SystemVersion.plist")
+        fi
+    fi
+}
+
 get_os() {
-    # $kernel_name is set in a function called cache_uname and is
-    # just the output of "uname -s".
+    # $kernel_name is set in cache_uname and is just the output of "uname -s".
     case $kernel_name in
         Darwin)   os=$darwin_name ;;
         SunOS)    os=Solaris ;;
@@ -71,39 +95,39 @@ get_os() {
 }
 
 get_distro() {
-    [[ $distro ]] && return
+    [ -n "$distro" ] && return
 
     case $os in
         Linux|BSD|MINIX)
-            if [[ -f /bedrock/etc/bedrock-release && -z $BEDROCK_RESTRICT ]]; then
+            if [ -f /bedrock/etc/bedrock-release ] && [ -z "$BEDROCK_RESTRICT" ]; then
                 case $distro_shorthand in
                     on|tiny) distro="Bedrock Linux" ;;
-                    *) distro=$(< /bedrock/etc/bedrock-release)
+                    *) distro=$(cat /bedrock/etc/bedrock-release)
                 esac
 
-            elif [[ -f /etc/redstar-release ]]; then
+            elif [ -f /etc/redstar-release ]; then
                 case $distro_shorthand in
                     on|tiny) distro="Red Star OS" ;;
                     *) distro="Red Star OS $(awk -F'[^0-9*]' '$0=$2' /etc/redstar-release)"
                 esac
 
-            elif [[ -f /etc/armbian-release ]]; then
+            elif [ -f /etc/armbian-release ]; then
                 . /etc/armbian-release
                 distro="Armbian $DISTRIBUTION_CODENAME (${VERSION:-})"
 
-            elif [[ -f /etc/siduction-version ]]; then
+            elif [ -f /etc/siduction-version ]; then
                 case $distro_shorthand in
                     on|tiny) distro=Siduction ;;
                     *) distro="Siduction ($(lsb_release -sic))"
                 esac
 
-            elif [[ -f /etc/mcst_version ]]; then
+            elif [ -f /etc/mcst_version ]; then
                 case $distro_shorthand in
                     on|tiny) distro="OS Elbrus" ;;
-                    *) distro="OS Elbrus $(< /etc/mcst_version)"
+                    *) distro="OS Elbrus $(cat /etc/mcst_version)"
                 esac
 
-            elif type -p pveversion >/dev/null; then
+            elif command -v pveversion >/dev/null; then
                 case $distro_shorthand in
                     on|tiny) distro="Proxmox VE" ;;
                     *)
@@ -112,7 +136,7 @@ get_distro() {
                         distro="Proxmox VE ${distro%/*}"
                 esac
 
-            elif type -p lsb_release >/dev/null; then
+            elif command -v lsb_release >/dev/null; then
                 case $distro_shorthand in
                     on)   lsb_flags=-si ;;
                     tiny) lsb_flags=-si ;;
@@ -120,15 +144,16 @@ get_distro() {
                 esac
                 distro=$(lsb_release "$lsb_flags")
 
-            elif [[ -f /etc/os-release || \
-                    -f /usr/lib/os-release || \
-                    -f /etc/openwrt_release || \
-                    -f /etc/lsb-release ]]; then
+            elif [ -f /etc/os-release ] || [ -f /usr/lib/os-release ] ||
+                 [ -f /etc/openwrt_release ] || [ -f /etc/lsb-release ]; then
 
                 # Source the os-release file
                 for file in /etc/lsb-release /usr/lib/os-release \
                             /etc/os-release  /etc/openwrt_release; do
-                    source "$file" && break
+                    if [ -f "$file" ]; then
+                        . "$file"
+                        break
+                    fi
                 done
 
                 # Format the distro name.
@@ -138,98 +163,100 @@ get_distro() {
                     off)  distro="${PRETTY_NAME:-${DISTRIB_DESCRIPTION}} ${UBUNTU_CODENAME}" ;;
                 esac
 
-            elif [[ -f /etc/GoboLinuxVersion ]]; then
+            elif [ -f /etc/GoboLinuxVersion ]; then
                 case $distro_shorthand in
                     on|tiny) distro=GoboLinux ;;
-                    *) distro="GoboLinux $(< /etc/GoboLinuxVersion)"
+                    *) distro="GoboLinux $(cat /etc/GoboLinuxVersion)"
                 esac
 
-            elif [[ -f /etc/SDE-VERSION ]]; then
-                distro="$(< /etc/SDE-VERSION)"
+            elif [ -f /etc/SDE-VERSION ]; then
+                distro="$(cat /etc/SDE-VERSION)"
                 case $distro_shorthand in
                     on|tiny) distro="${distro% *}" ;;
                 esac
 
-            elif type -p crux >/dev/null; then
+            elif command -v crux >/dev/null; then
                 distro=$(crux)
                 case $distro_shorthand in
                     on)   distro=${distro//version} ;;
                     tiny) distro=${distro//version*}
                 esac
 
-            elif type -p tazpkg >/dev/null; then
-                distro="SliTaz $(< /etc/slitaz-release)"
+            elif command -v tazpkg >/dev/null; then
+                distro="SliTaz $(cat /etc/slitaz-release)"
 
-            elif type -p kpt >/dev/null && \
-                 type -p kpm >/dev/null; then
+            elif command -v kpt >/dev/null && command -v kpm >/dev/null; then
                 distro=KSLinux
 
-            elif [[ -d /system/app/ && -d /system/priv-app ]]; then
+            elif [ -d /system/app/ ] && [ -d /system/priv-app ]; then
                 distro="Android $(getprop ro.build.version.release)"
 
             # Chrome OS doesn't conform to the /etc/*-release standard.
-            # While the file is a series of variables they can't be sourced
-            # by the shell since the values aren't quoted.
-            elif [[ -f /etc/lsb-release && $(< /etc/lsb-release) == *CHROMEOS* ]]; then
+            elif [ -f /etc/lsb-release ] && grep -q CHROMEOS /etc/lsb-release; then
                 distro='Chrome OS'
 
-            elif type -p guix >/dev/null; then
+            elif command -v guix >/dev/null; then
                 case $distro_shorthand in
                     on|tiny) distro="Guix System" ;;
                     *) distro="Guix System $(guix -V | awk 'NR==1{printf $4}')"
                 esac
 
             # Display whether using '-current' or '-release' on OpenBSD.
-            elif [[ $kernel_name = OpenBSD ]] ; then
-                read -ra kernel_info <<< "$(sysctl -n kern.version)"
-                distro=${kernel_info[*]:0:2}
+            elif [ "$kernel_name" = "OpenBSD" ]; then
+                kernel_info=$(sysctl -n kern.version)
+                distro=$(echo "$kernel_info" | awk '{print $1, $2}')
 
             else
                 for release_file in /etc/*-release; do
-                    distro+=$(< "$release_file")
+                    if [ -f "$release_file" ]; then
+                        distro="$distro$(cat "$release_file")"
+                    fi
                 done
 
-                if [[ -z $distro ]]; then
+                if [ -z "$distro" ]; then
                     case $distro_shorthand in
                         on|tiny) distro=$kernel_name ;;
                         *) distro="$kernel_name $kernel_version" ;;
                     esac
 
-                    distro=${distro/DragonFly/DragonFlyBSD}
-
                     # Workarounds for some BSD based distros.
-                    [[ -f /etc/pcbsd-lang ]]       && distro=PCBSD
-                    [[ -f /etc/trueos-lang ]]      && distro=TrueOS
-                    [[ -f /etc/pacbsd-release ]]   && distro=PacBSD
-                    [[ -f /etc/hbsd-update.conf ]] && distro=HardenedBSD
+                    [ -f /etc/pcbsd-lang ]       && distro=PCBSD
+                    [ -f /etc/trueos-lang ]      && distro=TrueOS
+                    [ -f /etc/pacbsd-release ]   && distro=PacBSD
+                    [ -f /etc/hbsd-update.conf ] && distro=HardenedBSD
                 fi
             fi
 
-            if [[ $(< /proc/version) == *Microsoft* || $kernel_version == *Microsoft* ]]; then
-                windows_version=$(wmic.exe os get Version)
-                windows_version=$(trim "${windows_version/Version}")
+            if [ -f /proc/version ] && grep -q Microsoft /proc/version; then
+                windows_version=$(wmic.exe os get Version 2>/dev/null)
+                windows_version=${windows_version#*Version}
+                windows_version=$(trim_quotes "$windows_version")
 
                 case $distro_shorthand in
-                    on)   distro+=" [Windows $windows_version]" ;;
-                    tiny) distro="Windows ${windows_version::2}" ;;
-                    *)    distro+=" on Windows $windows_version" ;;
+                    on)   distro="$distro [Windows $windows_version]" ;;
+                    tiny) distro="Windows ${windows_version%.*}" ;;
+                    *)    distro="$distro on Windows $windows_version" ;;
                 esac
 
-            elif [[ $(< /proc/version) == *chrome-bot* || -f /dev/cros_ec ]]; then
-                [[ $distro != *Chrome* ]] &&
-                    case $distro_shorthand in
-                        on)   distro+=" [Chrome OS]" ;;
-                        tiny) distro="Chrome OS" ;;
-                        *)    distro+=" on Chrome OS" ;;
-                    esac
-                    distro=${distro## on }
+            elif [ -f /proc/version ] && grep -q chrome-bot /proc/version || [ -f /dev/cros_ec ]; then
+                case $distro in
+                    *Chrome*) ;;
+                    *)
+                        case $distro_shorthand in
+                            on)   distro="$distro [Chrome OS]" ;;
+                            tiny) distro="Chrome OS" ;;
+                            *)    distro="$distro on Chrome OS" ;;
+                        esac
+                    ;;
+                esac
+                distro=${distro## on }
             fi
 
             distro=$(trim_quotes "$distro")
-            distro=${distro/NAME=}
+            distro=${distro#NAME=}
 
             # Get Ubuntu flavor.
-            if [[ $distro == "Ubuntu"* ]]; then
+            if [ "${distro#Ubuntu}" != "$distro" ]; then
                 case $XDG_CONFIG_DIRS in
                     *"studio"*)   distro=${distro/Ubuntu/Ubuntu Studio} ;;
                     *"plasma"*)   distro=${distro/Ubuntu/Kubuntu} ;;
@@ -335,33 +362,6 @@ get_distro() {
     [[ ${ascii_distro:-auto} == auto ]] && \
         ascii_distro=$(trim "$distro")
 }
-
-cache_uname() {
-    # Cache the output of uname so we don't
-    # have to spawn it multiple times.
-    IFS=" " read -ra uname <<< "$(uname -srm)"
-
-    kernel_name="${uname[0]}"
-    kernel_version="${uname[1]}"
-    kernel_machine="${uname[2]}"
-
-    if [[ "$kernel_name" == "Darwin" ]]; then
-        # macOS can report incorrect versions unless this is 0.
-        # https://github.com/dylanaraps/neofetch/issues/1607
-        export SYSTEM_VERSION_COMPAT=0
-
-        IFS=$'\n' read -d "" -ra sw_vers <<< "$(awk -F'<|>' '/key|string/ {print $3}' \
-                            "/System/Library/CoreServices/SystemVersion.plist")"
-        for ((i=0;i<${#sw_vers[@]};i+=2)) {
-            case ${sw_vers[i]} in
-                ProductName)          darwin_name=${sw_vers[i+1]} ;;
-                ProductVersion)       osx_version=${sw_vers[i+1]} ;;
-                ProductBuildVersion)  osx_build=${sw_vers[i+1]}   ;;
-            esac
-        }
-    fi
-}
-
 
 get_kernel() {
     # Since these OS are integrated systems, it's better to skip this function altogether
@@ -653,8 +653,6 @@ remove_old_config() {
 install_config() {
         printf "\e[1;34m[+] Git cloning new config & opening Neovim to install plugins...\e[0m\n"
         git clone https://github.com/LinuxUser255/nvim.git "${XDG_CONFIG_HOME:-$HOME/.config}"/nvim
-        # Open Neovim for the first time and install plugins
-        nvim
 }
 
 
