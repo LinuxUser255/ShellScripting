@@ -158,8 +158,12 @@ build_neovim() {
         error "Failed to install Neovim."
     fi
 
+    # Create a symbolic link for Neovim
+    sudo ln -s /usr/local/bin/nvim /usr/bin/nvim
+
     info "Neovim built and installed successfully."
 }
+
 
 install_brave() {
     info "Installing Brave browser..."

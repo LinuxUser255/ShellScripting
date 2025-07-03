@@ -2,6 +2,7 @@
 
 
 # Install script inspired by Dylan Araps neofetch
+# to symlink neovim, if needed: which nvim sudo ln -s /usr/local/bin/nvim /usr/bin/nvim
 
 # Below is a list of Required languages for this Neovim configuration
 #==============================================================
