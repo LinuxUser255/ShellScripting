@@ -34,34 +34,37 @@ detect_distro() {
         # Determine package manager based on distribution
         case "$DISTRO" in
             "Debian"* | "Ubuntu"*)
-                PKG_MANAGER="apt"
+                : "apt"
             ;;
             "Fedora"*)
-                PKG_MANAGER="dnf"
+                : "dnf"
             ;;
             "Arch"*)
-                PKG_MANAGER="pacman"
+                : "pacman"
             ;;
             "Alpine"*)
-                PKG_MANAGER="apk"
+                : "apk"
             ;;
             "FreeBSD"*)
-                PKG_MANAGER="pkg"
+                : "pkg"
             ;;
             "Red Hat"* | "CentOS"*)
-                PKG_MANAGER="dnf"
+                : "dnf"
             ;;
             "openSUSE"*)
-                PKG_MANAGER="zypper"
+                : "zypper"
             ;;
             "Void"*)
-                PKG_MANAGER="xbps"
+                : "xbps"
             ;;
             *)
                 printf "\e[1;31m[-] Unsupported Linux distribution.\e[0m\n"
                 exit 1
             ;;
         esac
+
+        # Set the package manager variable
+        PKG_MANAGER="$_"
 
         printf "\e[1;32m[+] Detected distribution: %s (Package Manager: %s)\e[0m\n" "$DISTRO" "$PKG_MANAGER"
 }
@@ -131,56 +134,60 @@ build_neovim() {
                 # Complete removal: remove all files and directories & purge
                 case "$PKG_MANAGER" in
                     "apt")
-                        sudo apt remove -y neovim && sudo apt purge neovim -y
-                    ;;
+                        : "sudo apt remove -y neovim && sudo apt purge neovim -y"
+                        ;;
                     "dnf")
-                        sudo dnf remove -y neovim && sudo dnf purge neovim -y
-                    ;;
+                        : "sudo dnf remove -y neovim && sudo dnf purge neovim -y"
+                        ;;
                     "pacman")
-                        sudo pacman -R --noconfirm neovim && sudo pacman -R --noconfirm neovim-doc neovim-runtime neovim-common
-                    ;;
+                        : "sudo pacman -R --noconfirm neovim && sudo pacman -R --noconfirm neovim-doc neovim-runtime neovim-common"
+                        ;;
                     "apk")
-                        sudo apk del neovim && sudo apk del neovim-doc neovim-runtime neovim-common
-                    ;;
+                        : "sudo apk del neovim && sudo apk del neovim-doc neovim-runtime neovim-common"
+                        ;;
                     "pkg")
-                        sudo pkg delete -y neovim && sudo pkg delete -y neovim-doc neovim-runtime neovim-common
-                    ;;
+                        : "sudo pkg delete -y neovim && sudo pkg delete -y neovim-doc neovim-runtime neovim-common"
+                        ;;
                     "zypper")
-                        sudo zypper remove -y neovim && sudo zypper remove -y neovim-doc neovim-runtime neovim-common
-                    ;;
+                        : "sudo zypper remove -y neovim && sudo zypper remove -y neovim-doc neovim-runtime neovim-common"
+                        ;;
                     "xbps")
-                        sudo xbps-remove -y neovim && sudo xbps-remove -y neovim-doc neovim-runtime neovim-common
-                    ;;
+                        : "sudo xbps-remove -y neovim && sudo xbps-remove -y neovim-doc neovim-runtime neovim-common"
+                        ;;
                 esac
-                printf "\e[1;32m[+] Removed existing Neovim installation\e[0m\n"
-            fi
-        fi
 
-        # Install build prerequisites
-        printf "\e[1;34m[+] Installing Neovim build dependencies...\e[0m\n"
-        case "$PKG_MANAGER" in
-            "apt")
-                sudo apt install -y ninja-build gettext cmake unzip curl build-essential
-            ;;
-            "dnf")
-                sudo dnf install -y ninja-build gettext cmake unzip curl gcc make
-            ;;
-            "pacman")
-                sudo pacman -S --noconfirm ninja gettext cmake unzip curl base-devel
-            ;;
-            "apk")
-                sudo apk add ninja gettext cmake unzip curl build-base
-            ;;
-            "pkg")
-                sudo pkg install -y ninja gettext cmake unzip curl
-            ;;
-            "zypper")
-                sudo zypper install -y ninja gettext cmake unzip curl gcc make
-            ;;
-            "xbps")
-                sudo xbps-install -S -y ninja gettext cmake unzip curl base-devel
-            ;;
-        esac
+                # Execute the removal command
+                eval "$_"
+
+
+                # Install build prerequisites
+                printf "\e[1;34m[+] Installing Neovim build dependencies...\e[0m\n"
+                case "$PKG_MANAGER" in
+                    "apt")
+                        : "sudo apt install -y ninja-build gettext cmake unzip curl build-essential"
+                        ;;
+                    "dnf")
+                        : "sudo dnf install -y ninja-build gettext cmake unzip curl gcc make"
+                        ;;
+                    "pacman")
+                        : "sudo pacman -S --noconfirm ninja gettext cmake unzip curl base-devel"
+                        ;;
+                    "apk")
+                        : "sudo apk add ninja gettext cmake unzip curl build-base"
+                        ;;
+                    "pkg")
+                        : "sudo pkg install -y ninja gettext cmake unzip curl"
+                        ;;
+                    "zypper")
+                        : "sudo zypper install -y ninja gettext cmake unzip curl gcc make"
+                        ;;
+                    "xbps")
+                        : "sudo xbps-install -S -y ninja gettext cmake unzip curl base-devel"
+                        ;;
+                esac
+
+        # Execute the command
+        eval "$_"
 
         # Create a temporary directory for building Neovim
         build_dir=$(mktemp -d)
@@ -241,72 +248,39 @@ build_neovim() {
         printf "\e[1;32m[+] Installed: %s\e[0m\n" "$nvim_version"
 }
 
-# Neovim Config Install dependencies based on package manager
-install_deps() {
-        printf "\e[1;34m[+] Installing dependencies for %s using %s...\e[0m\n" "$DISTRO" "$PKG_MANAGER"
+# Install dependencies based on package manager
+printf "\e[1;34m[+] Installing dependencies for %s using %s...\e[0m\n" "$DISTRO" "$PKG_MANAGER"
 
-        case "$PKG_MANAGER" in
-            "apt")
-                sudo apt update && sudo apt install -y \
-                    tree-sitter \
-                    tree-sitter-cli \
-                    nodejs npm \
-                    shellcheck \
-                    ripgrep
-            ;;
-            "dnf")
-                sudo dnf update -y && sudo dnf install -y \
-                    tree-sitter \
-                    tree-sitter-cli \
-                    nodejs npm \
-                    ripgrep
-            ;;
-            "pacman")
-                sudo pacman -S --noconfirm \
-                    tree-sitter \
-                    tree-sitter-cli \
-                    nodejs npm \
-                    shellcheck \
-                    ripgrep
-            ;;
-            "apk")
-                sudo apk add --no-cache \
-                    tree-sitter \
-                    tree-sitter-cli \
-                    nodejs npm \
-                    shellcheck \
-                    ripgrep
-            ;;
-            "pkg")
-                sudo pkg install -y \
-                    tree-sitter \
-                    tree-sitter-cli \
-                    nodejs npm \
-                    shellcheck \
-                    ripgrep
-            ;;
-            "zypper")
-                sudo zypper install -y \
-                    tree-sitter \
-                    tree-sitter-cli \
-                    nodejs npm \
-                    shellcheck \
-                    ripgrep
-            ;;
-            "xbps")
-                sudo xbps-install -S -y \
-                    tree-sitter \
-                    tree-sitter-cli \
-                    nodejs npm \
-                    shellcheck \
-                    ripgrep
-            ;;
-            *)
-                printf "\e[1;31m[-] Unsupported package manager: %s\e[0m\n" "$PKG_MANAGER"
-                exit 1
-            ;;
-        esac
-}
+case "$PKG_MANAGER" in
+    "apt")
+        : "sudo apt update && sudo apt install -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+    ;;
+    "dnf")
+        : "sudo dnf update -y && sudo dnf install -y tree-sitter tree-sitter-cli nodejs npm ripgrep"
+    ;;
+    "pacman")
+        : "sudo pacman -S --noconfirm tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+    ;;
+    "apk")
+        : "sudo apk add --no-cache tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+    ;;
+    "pkg")
+        : "sudo pkg install -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+    ;;
+    "zypper")
+        : "sudo zypper install -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+    ;;
+    "xbps")
+        : "sudo xbps-install -S -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+    ;;
+    *)
+        printf "\e[1;31m[-] Unsupported package manager: %s\e[0m\n" "$PKG_MANAGER"
+        exit 1
+    ;;
+esac
+
+# Execute the installation command
+eval "$_"
 
 # Removing your old Neovim config to install the new one
 remove_old_config() {
@@ -326,7 +300,6 @@ main() {
         detect_distro
         check_neovim_version #
         build_neovim #  if required by user (if not, it will be skipped)
-        install_deps #
         remove_old_config #
         install_config #
 }
