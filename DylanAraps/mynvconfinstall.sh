@@ -359,41 +359,41 @@ build_neovim() {
 }
 
 nvim_config_deps(){
-    printf "\e[1;34m[+] Installing dependencies for %s using %s...\e[0m\n" "$DISTRO" "$PKG_MANAGER"
+         printf "\e[1;34m[+] Installing dependencies for %s using %s...\e[0m\n" "$DISTRO" "$PKG_MANAGER"
 
-    case "$PKG_MANAGER" in
-        "apt")
-            : "sudo apt update && sudo apt install -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
-            ;;
-        "dnf")
-            : "sudo dnf update -y && sudo dnf install -y tree-sitter tree-sitter-cli nodejs npm ripgrep"
-            ;;
-        "pacman")
-            : "sudo pacman -S --noconfirm tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
-            ;;
-        "apk")
-            : "sudo apk add --no-cache -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
-            ;;
-        "pkg")
-            : "sudo pkg install -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
-            ;;
-        "zypper")
-            : "sudo zypper install -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
-            ;;
-        "xbps")
-            : "sudo xbps-install -S -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
-            ;;
-        "brew") # macOS with Homebrew
-            : "brew install tree-sitter node shellcheck ripgrep"
-            ;;
-        *)
-            printf "\e[1;31m[-] Unsupported package manager: %s\e[0m\n" "$PKG_MANAGER"
-            exit 1
-            ;;
-    esac
+         case "$PKG_MANAGER" in
+             "apt")
+                 : "sudo apt update && sudo apt install -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+                 ;;
+             "dnf")
+                 : "sudo dnf update -y && sudo dnf install -y tree-sitter tree-sitter-cli nodejs npm ripgrep"
+                 ;;
+             "pacman")
+                 : "sudo pacman -S --noconfirm tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+                 ;;
+             "apk")
+                 : "sudo apk add --no-cache -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+                 ;;
+             "pkg")
+                 : "sudo pkg install -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+                 ;;
+             "zypper")
+                 : "sudo zypper install -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+                 ;;
+             "xbps")
+                 : "sudo xbps-install -S -y tree-sitter tree-sitter-cli nodejs npm shellcheck ripgrep"
+                 ;;
+             "brew") # macOS with Homebrew
+                 : "brew install tree-sitter node shellcheck ripgrep"
+                 ;;
+             *)
+                 printf "\e[1;31m[-] Unsupported package manager: %s\e[0m\n" "$PKG_MANAGER"
+                 exit 1
+                 ;;
+         esac
 
-    # Execute the command stored in $_
-    eval "$_"
+         # Execute the command stored in $_
+           eval "$_"
 }
 # Removing your old Neovim config to install the new one
 remove_old_config() {
@@ -410,18 +410,16 @@ install_config() {
 }
 
 main() {
-        install_prompt # 1
+        install_prompt
         detect_distro
         full_sys_upgrade
-        check_neovim_version #
+        check_neovim_version
         build_neovim #  if required by user (if not, it will be skipped)
         nvim_config_deps
-        remove_old_config #
-        install_config #
+        remove_old_config
+        install_config
 }
 
 main
-        printf "\e[1;34m[+] Open Neovim to install plugins...\e[0m\n"
-}
 
-main()
+
