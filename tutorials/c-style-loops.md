@@ -12,12 +12,30 @@ done
 ```
 This iterates directly over the elements of the `pkgs` array, assigning each element to the variable `pkg`. It’s concise and readable for processing array elements sequentially.
 
-To use a C-style `for` loop, as in your example:
+
 ```bash
-for ((i=0;i<${#arr[@]};i++)); do
-    printf '%s\n' "${arr[i]}"
+for pkg in "${pkgs[@]}"; do
+    # Process each package
 done
 ```
+## The logic template
+```bash
+for (( variable_assignment; condition; iteration process )); do
+printf '%s\n' "${arr[i]}"
+done
+```
+
+```bash
+for ((i=0;i<${#arr[@]};i++)); do
+printf '%s\n' "${arr[i]}"
+done
+```
+
+
+
+
+
+To use a C-style `for` loop, as in your example:
 We’ll:
 1. Replace the foreach loop with a C-style loop that iterates over indices (`i` from `0` to `${#pkgs[@]}-1`).
 2. Access each package using `${pkgs[i]}` instead of `pkg`.

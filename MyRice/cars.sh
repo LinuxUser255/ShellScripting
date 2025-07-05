@@ -36,7 +36,6 @@ error(){
 # Function to print error messages
 success(){
     print_msg "$GREEN" "Success: $1" >&2
-    exit 1
 }
 
 # Function to print informational messages
@@ -95,7 +94,6 @@ pkgs=(
      gpg
      xclip
      xsel
-     texlive-full
  )
 
 
@@ -105,16 +103,18 @@ install_packages() {
 
         local total=${#pkgs[@]}
         local count=0
-        local failed=0
+        local -a failed=()
 
         for pkg in "${pkgs[@]}"; do
             ((count++))
             if ! is_installed "$pkg"; then
                 printf "Installing (%d/%d): %s\n" "$count" "$total" "$pkg"
                 if apt install -y "$pkg" &>/dev/null; then
-                    success "Installed $pkg"
+                    # Use print_msg instead of success to avoid exiting
+                    print_msg "$GREEN" "Installed $pkg"
+                    #success "Installed $pkg"
                 else
-                    waring "Failed to install $pkg"
+                    warning "Failed to install $pkg"
                     failed+=("$pkg")
                 fi
             else
@@ -313,7 +313,8 @@ build_alacritty() {
 
         # Create config directory for the user
         local user="${SUDO_USER:-$USER}"
-        local user_home=$(getent passwd "$user" | cut -d: -f6)
+        local user_home
+        user_home=$(getent passwd "$user" | cut -d: -f6)
         local config_dir="$user_home/.config/alacritty"
 
         # Create config directory if it doesn't exist
@@ -362,7 +363,8 @@ install_desktop_files() {
 
         # Install shell completions for the user
         local user="${SUDO_USER:-$USER}"
-        local user_home=$(getent passwd "$user" | cut -d: -f6)
+        local user_home
+        user_home=$(getent passwd "$user" | cut -d: -f6)
 
         # Bash
         mkdir -p /usr/share/bash-completion/completions
@@ -450,8 +452,13 @@ install_brave() {
             error "Failed to add Brave repository to APT sources."
 
         # Update APT sources and install Brave
-        apt update && apt install -y brave-browser ||
+        if ! apt update; then
+            error "Failed to update APT sources."
+        fi
+
+        if ! apt install -y brave-browser; then
             error "Failed to install Brave browser."
+        fi
 
         success "Brave browser installed successfully."
 }
@@ -488,9 +495,12 @@ lazy_scripts(){
 
 
 
-# my_dot_files()I{
-#
-#}
+my_dot_files(){
+        # The following goes in my home directory (~/.zshrc)
+        curl -LO https://raw.githubusercontent.com/LinuxUser255/BashAndLinux/refs/heads/main/zshrcs/.zshrc
+        # install my neovim configuration
+        git clone https://github.com/LinuxUser255/nvim.git "${XDG_CONFIG_HOME:-$HOME/.config}"/nvim
+}
 
 
 
@@ -506,6 +516,8 @@ main() {
     build_alacritty    # Added this line to call the function
     install_brave
     fastfetch_build
+    my_dot_files   # Added this line to call the function
+    # install_vim_from_source  # Added this line to call the function
     # lazy_scripts  # Added this line to call the function
     # zsh_customize
 }
