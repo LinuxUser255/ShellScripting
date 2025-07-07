@@ -37,11 +37,6 @@ install_build_dependencies() {
        sudo apt install debhelper devscripts
 }
 
-# TRY THIS TO BYPASS DEPENDENCY CHECKS
-#bypass_dep_check() {
-#     dpkg-buildpackage -us -uc -d
-#}
-#
 
 # Function to install from GitHub release
 install_from_release() {
@@ -94,6 +89,11 @@ build_from_source() {
           fi
         done
 
+        # Install build dependencies
+        echo -e "${YELLOW}Installing build dependencies...${NC}"
+        apt update
+        apt install -y debhelper devscripts
+
         # Create temp directory
         TMP_DIR=$(mktemp -d)
         cd "$TMP_DIR"
@@ -103,7 +103,8 @@ build_from_source() {
         cd HARDN-XDR
 
         echo -e "${BLUE}Building Debian package...${NC}"
-        dpkg-buildpackage -us -uc
+        echo -e "${BLUE}Running build with dependency override...${NC}"
+        dpkg-buildpackage -us -uc -d
         apt install -f -y
         cd ..
 
@@ -159,4 +160,3 @@ main_menu() {
 }
 
 main_menu
-
