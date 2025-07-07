@@ -13,135 +13,150 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Check if running as root
-if [ "$EUID" -ne 0 ]; then
-  echo -e "${RED}Please run as root or with sudo privileges${NC}"
-  exit 1
-fi
+#------------------------------------------------
+# Use EUID when using Bash Shells: It is a Bash built-in variable.
+# And is slightly faster.
+[ "$EUID" -eq 0 ] || { echo "Please run as root or with sudo privileges."; exit 1; }
 
-# Function to display banner
+# Use $(id -u)" when using non-bash shells:
+#[ "$(id -u)" -ne 0 ] && { echo "Please run as root or with sudo privileges."; exit 1; }
+
+# the $(id -u)" requires spawing a subprocess,
+# However, works in virtually all POSIX-compliant shells
+
 display_banner() {
-  echo -e "${BLUE}"
-  echo "╔═══════════════════════════════════════════════╗"
-  echo "║             HARDN-XDR Installer               ║"
-  echo "╚═══════════════════════════════════════════════╝"
-  echo -e "${NC}"
+      echo -e "${BLUE}"
+      echo "╔═══════════════════════════════════════════════╗"
+      echo "║             HARDN-XDR Installer               ║"
+      echo "╚═══════════════════════════════════════════════╝"
+      echo -e "${NC}"
 }
+
+install_build_dependencies() {
+       sudo apt update
+       sudo apt install debhelper devscripts
+}
+
+# TRY THIS TO BYPASS DEPENDENCY CHECKS
+#bypass_dep_check() {
+#     dpkg-buildpackage -us -uc -d
+#}
+#
 
 # Function to install from GitHub release
 install_from_release() {
-  echo -e "${YELLOW}Installing HARDN-XDR from GitHub release...${NC}"
+        echo -e "${YELLOW}Installing HARDN-XDR from GitHub release...${NC}"
 
-  # Get latest release URL
-  LATEST_RELEASE_URL="https://github.com/OpenSource-For-Freedom/HARDN-XDR/releases/latest"
+        # Get latest release URL
+        LATEST_RELEASE_URL="https://github.com/OpenSource-For-Freedom/HARDN-XDR/releases/latest"
 
-  echo -e "${BLUE}Downloading latest release package...${NC}"
+        echo -e "${BLUE}Downloading latest release package...${NC}"
 
-  # Create temp directory
-  TMP_DIR=$(mktemp -d)
-  cd "$TMP_DIR"
+        # Create temp directory
+        TMP_DIR=$(mktemp -d)
+        cd "$TMP_DIR"
 
-  # Download latest .deb package
-  if command -v curl &> /dev/null; then
-    curl -s "$LATEST_RELEASE_URL" | grep -o 'href=".*hardn_.*_amd64.deb"' | head -n 1 | cut -d'"' -f2 | xargs -I {} curl -L "https://github.com{}" -o hardn.deb
-  elif command -v wget &> /dev/null; then
-    wget -q -O - "$LATEST_RELEASE_URL" | grep -o 'href=".*hardn_.*_amd64.deb"' | head -n 1 | cut -d'"' -f2 | xargs -I {} wget -q "https://github.com{}" -O hardn.deb
-  else
-    echo -e "${RED}Error: Neither curl nor wget found. Please install one of them.${NC}"
-    exit 1
-  fi
+        # Download latest .deb package
+        if command -v curl &> /dev/null; then
+          curl -s "$LATEST_RELEASE_URL" | grep -o 'href=".*hardn_.*_amd64.deb"' | head -n 1 | cut -d'"' -f2 | xargs -I {} curl -L "https://github.com{}" -o hardn.deb
+        elif command -v wget &> /dev/null; then
+          wget -q -O - "$LATEST_RELEASE_URL" | grep -o 'href=".*hardn_.*_amd64.deb"' | head -n 1 | cut -d'"' -f2 | xargs -I {} wget -q "https://github.com{}" -O hardn.deb
+        else
+          echo -e "${RED}Error: Neither curl nor wget found. Please install one of them.${NC}"
+          exit 1
+        fi
 
-  # Check if download was successful
-  if [ ! -f hardn.deb ]; then
-    echo -e "${RED}Failed to download the package. Please check your internet connection or try the build from source option.${NC}"
-    exit 1
-  fi
+        # Check if download was successful
+        if [ ! -f hardn.deb ]; then
+          echo -e "${RED}Failed to download the package. Please check your internet connection or try the build from source option.${NC}"
+          exit 1
+        fi
 
-  echo -e "${BLUE}Installing package...${NC}"
-  apt install -y ./hardn.deb
+        echo -e "${BLUE}Installing package...${NC}"
+        apt install -y ./hardn.deb
 
-  # Clean up
-  cd - > /dev/null
-  rm -rf "$TMP_DIR"
+        # Clean up
+        cd - > /dev/null
+        rm -rf "$TMP_DIR"
 
-  echo -e "${GREEN}HARDN-XDR installed successfully!${NC}"
+        echo -e "${GREEN}HARDN-XDR installed successfully!${NC}"
 }
 
 # Function to build from source
 build_from_source() {
-  echo -e "${YELLOW}Building HARDN-XDR from source...${NC}"
+        echo -e "${YELLOW}Building HARDN-XDR from source...${NC}"
 
-  # Check for required tools
-  for tool in git dpkg-buildpackage; do
-    if ! command -v $tool &> /dev/null; then
-      echo -e "${RED}Error: $tool is not installed. Please install it first.${NC}"
-      exit 1
-    fi
-  done
+        # Check for required tools
+        for tool in git dpkg-buildpackage; do
+          if ! command -v $tool &> /dev/null; then
+            echo -e "${RED}Error: $tool is not installed. Please install it first.${NC}"
+            exit 1
+          fi
+        done
 
-  # Create temp directory
-  TMP_DIR=$(mktemp -d)
-  cd "$TMP_DIR"
+        # Create temp directory
+        TMP_DIR=$(mktemp -d)
+        cd "$TMP_DIR"
 
-  echo -e "${BLUE}Cloning repository...${NC}"
-  git clone https://github.com/OpenSource-For-Freedom/HARDN-XDR
-  cd HARDN-XDR
+        echo -e "${BLUE}Cloning repository...${NC}"
+        git clone https://github.com/OpenSource-For-Freedom/HARDN-XDR
+        cd HARDN-XDR
 
-  echo -e "${BLUE}Building Debian package...${NC}"
-  dpkg-buildpackage -us -uc
-  apt install -f -y
-  cd ..
+        echo -e "${BLUE}Building Debian package...${NC}"
+        dpkg-buildpackage -us -uc
+        apt install -f -y
+        cd ..
 
-  echo -e "${BLUE}Installing package...${NC}"
-  apt install -y ./hardn_*_amd64.deb
+        echo -e "${BLUE}Installing package...${NC}"
+        apt install -y ./hardn_*_amd64.deb
 
-  # Clean up
-  cd - > /dev/null
-  rm -rf "$TMP_DIR"
+        # Clean up
+        cd - > /dev/null
+        rm -rf "$TMP_DIR"
 
-  echo -e "${GREEN}HARDN-XDR built and installed successfully!${NC}"
+        echo -e "${GREEN}HARDN-XDR built and installed successfully!${NC}"
 }
 
 # Function to run the tool
 run_tool() {
-  echo -e "${BLUE}Starting HARDN-XDR...${NC}"
-  hardn-xdr
+        echo -e "${BLUE}Starting HARDN-XDR...${NC}"
+        hardn-xdr
 }
 
 # Main menu
 main_menu() {
-  display_banner
+        display_banner
 
-  echo -e "${YELLOW}Please select an installation method:${NC}"
-  echo -e "1) ${GREEN}Install from GitHub Release${NC}"
-  echo -e "2) ${GREEN}Build from Source${NC}"
-  echo -e "3) ${GREEN}Run HARDN-XDR (if already installed)${NC}"
-  echo -e "4) ${RED}Exit${NC}"
+        echo -e "${YELLOW}Please select an installation method:${NC}"
+        echo -e "1) ${GREEN}Install from GitHub Release${NC}"
+        echo -e "2) ${GREEN}Build from Source${NC}"
+        echo -e "3) ${GREEN}Run HARDN-XDR (if already installed)${NC}"
+        echo -e "4) ${RED}Exit${NC}"
 
-  read -r -p "Enter your choice (1-4): " choice
+        read -r -p "Enter your choice (1-4): " choice
 
-  case $choice in
-    1)
-      install_from_release
-      echo -e "${BLUE}You can now run HARDN-XDR with:${NC} sudo hardn-xdr"
-      ;;
-    2)
-      build_from_source
-      echo -e "${BLUE}You can now run HARDN-XDR with:${NC} sudo hardn-xdr"
-      ;;
-    3)
-      run_tool
-      ;;
-    4)
-      echo -e "${YELLOW}Exiting...${NC}"
-      exit 0
-      ;;
-    *)
-      echo -e "${RED}Invalid choice. Please try again.${NC}"
-      main_menu
-      ;;
-  esac
+        case $choice in
+          1)
+            install_from_release
+            echo -e "${BLUE}You can now run HARDN-XDR with:${NC} sudo hardn-xdr"
+            ;;
+          2)
+            build_from_source
+            echo -e "${BLUE}You can now run HARDN-XDR with:${NC} sudo hardn-xdr"
+            ;;
+          3)
+            run_tool
+            ;;
+          4)
+            echo -e "${YELLOW}Exiting...${NC}"
+            exit 0
+            ;;
+          *)
+            echo -e "${RED}Invalid choice. Please try again.${NC}"
+            main_menu
+            ;;
+        esac
 }
 
-# Run the main menu
 main_menu
 
