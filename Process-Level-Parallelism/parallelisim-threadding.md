@@ -440,7 +440,7 @@ wait
 
 ## Above script explained
 
-Here's a **detailed analysis and explanation** of your Bash script — which
+Here's a **detailed analysis and explanation** of this Bash script — which
 implements a **parallel job runner with a controlled thread pool** using native
 Bash constructs.
 
