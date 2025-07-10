@@ -20,26 +20,26 @@ read -p "Enter the number (1-6): " choice
 
 # Case statement to handle user input
 case $choice in
-    1)
-        echo "You selected Debian."
-        ;;
-    2)
-        echo "You selected Ubuntu."
-        ;;
-    3)
-        echo "You selected Fedora."
-        ;;
-    4)
-        echo "You selected Arch."
-        ;;
-    5)
-        echo "You selected OpenSUSE."
-        ;;
-    6)
-        echo "You selected Void."
-        ;;
-    *)
-        echo "Invalid choice. Please enter a number between 1 and 6."
+        1)
+            echo "You selected Debian."
+            ;;
+        2)
+            echo "You selected Ubuntu."
+            ;;
+        3)
+            echo "You selected Fedora."
+            ;;
+        4)
+            echo "You selected Arch."
+            ;;
+        5)
+            echo "You selected OpenSUSE."
+            ;;
+        6)
+            echo "You selected Void."
+            ;;
+        *)
+            echo "Invalid choice. Please enter a number between 1 and 6."
         ;;
 esac
 
@@ -58,18 +58,18 @@ read -r -p "Enter the number (1-3): " choice
 
 # Case statement to handle user input
 case $choice in
-    1)
-        : "Debian"  # the : evals args, and returns 0 success status code
-    ;;
-    2)
-        : "Ubuntu"
-    ;;
-    3)
-        : "Fedora"
-    ;;
-    *)
-        : "Invalid option. Please try again."
-    ;;
+        1)
+            : "Debian"  # the : evals args, and returns 0 success status code
+        ;;
+        2)
+            : "Ubuntu"
+        ;;
+        3)
+            : "Fedora"
+        ;;
+        *)
+            : "Invalid option. Please try again."
+        ;;
 
 
 esac
@@ -84,7 +84,7 @@ echo "You selected $distro."
 
 # How the pattern works:
 # ---------------------
-# 1. We use `: "Distribution Name"` instead of directly echoing the result
+# 1. Use `: "Distribution Name"` instead of directly echoing the result
 #    in each case branch.
 # 2. After the case statement completes, we capture the value with `distro="$_"`.
 # 3. Finally, we display the message with the selected distribution.
@@ -102,7 +102,7 @@ echo "You selected $distro."
 # - Always returns a success status code (0)
 # - Takes arguments but performs no operation on them
 
-# The $_ variable:
+# The `$_ `variable:
 # - Contains the last argument of the most recently executed command
 # - Is automatically set by the shell after each command execution
 
@@ -130,7 +130,7 @@ echo "You selected $distro."
 
 # Without this catch-all case:
 # - Invalid inputs like "7" or "banana" would be silently ignored
-# - The $_ variable might contain unpredictable values from previous commands
+# - The `$_ `variable might contain unpredictable values from previous commands
 # - This could lead to confusing output or potential errors
 
 
