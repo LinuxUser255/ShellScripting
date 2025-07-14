@@ -266,6 +266,8 @@ lazy_scripts() {
 
     # Make all scripts executable
     chmod +x /usr/local/bin/fff /usr/local/bin/ppp /usr/local/bin/fast /usr/local/bin/gclone.sh
+
+    curl -LO https://raw.githubusercontent.com/LinuxUser255/ShellScripting/refs/heads/main/VirtualBoxStuff/.bashrc
 }
 
 bash_rc() {
