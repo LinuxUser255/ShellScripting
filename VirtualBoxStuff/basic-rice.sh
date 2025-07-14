@@ -192,7 +192,7 @@ install_packages() {
     info "Installing packages..."
 
     # Define packages as space-separated list (POSIX compatible)
-    packages="vim git curl gcc make ripgrep python3-pip exuberant-ctags ack-grep build-essential arandr chromium ninja-build gettext unzip x11-server-utils setxkbmap xdotool ffmpeg pass gpg xclip xsel texlive-full"
+    packages="vim git curl gcc make ripgrep python3-pip exuberant-ctags ack-grep build-essential arandr chromium ninja-build gettext unzip x11-server-utils setxkbmap xdotool ffmpeg pass gpg xclip xsel"
 
     total=0
     for pkg in $packages; do
