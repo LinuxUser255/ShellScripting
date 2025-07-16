@@ -132,6 +132,6 @@ echo "You selected $distro."
 # - Invalid inputs like "7" or "banana" would be silently ignored
 # - The `$_ `variable might contain unpredictable values from previous commands
 # - This could lead to confusing output or potential errors
-
-
 ```
+
+

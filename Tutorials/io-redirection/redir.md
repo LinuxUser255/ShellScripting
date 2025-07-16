@@ -179,7 +179,4 @@ This is useful in cases where the command may generate errors that you don't car
 * **`>&/dev/null`**: Discards **both stdout and stderr**.
 * **`>2&/dev/null`**: Discards **stderr** only, leaving **stdout** visible.
 
-These forms of redirection give you flexibility in controlling which outputs
-you want to discard or preserve, helping you tailor the behavior of your
-scripts based on your needs.
 
