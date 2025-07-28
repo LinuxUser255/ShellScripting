@@ -10,5 +10,5 @@ other projects/repos
 See fork of [dylanaraps/pure-bash-bible](https://github.com/LinuxUser255/pure-bash-bible)
 for more details.
 
-[Bash Logo](ShellScripting/Docs/bashscripting-logo.png)
+![Bash Logo](Docs/bashscripting-logo.png)
 
