@@ -7,3 +7,8 @@ with a variety of use-cases
 Also, there are shell scripts in here that are used for
 other projects/repos
 
+See fork of [dylanaraps/pure-bash-bible](https://github.com/LinuxUser255/pure-bash-bible)
+for more details.
+
+[Bash Logo](ShellScripting/Docs/bashscripting-logo.png)
+
