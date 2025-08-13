@@ -1,0 +1,214 @@
+# i3 config for Debian-based distros
+
+set $mod Mod4
+
+default_border pixel 1
+default_floating_border normal
+hide_edge_borders none
+
+bindsym $mod+u border none
+bindsym $mod+y border pixel 1
+bindsym $mod+n border normal
+
+font xft:URWGothic-Book 14
+
+floating_modifier $mod
+
+# Terminal
+bindsym $mod+Return exec alacritty
+
+# Kill window
+bindsym $mod+Shift+q kill
+
+# Launcher (replace with default dmenu)
+bindsym $mod+d exec --no-startup-id dmenu_run
+# Optional if you install morc_menu:
+# bindsym $mod+z exec --no-startup-id morc_menu
+
+#######################
+## Sound & Audio ######
+#######################
+exec --no-startup-id start-pulseaudio-x11
+exec --no-startup-id pasystray
+bindsym $mod+Ctrl+m exec pavucontrol
+
+#######################
+## Apps ###############
+#######################
+bindsym $mod+Ctrl+b exec alacritty
+bindsym $mod+F2 exec firefox
+bindsym $mod+F3 exec pcmanfm
+bindsym $mod+Shift+F3 exec pkexec pcmanfm
+bindsym $mod+F5 exec alacritty -e mocp
+bindsym $mod+t exec --no-startup-id pkill picom
+bindsym $mod+Ctrl+t exec --no-startup-id picom -b
+bindsym $mod+Shift+d --release exec "killall dunst; notify-send 'restart dunst'"
+bindsym Print exec --no-startup-id scrot ~/Pictures/screenshot_%Y-%m-%d_%H-%M-%S.png
+bindsym $mod+Print exec --no-startup-id scrot -u ~/Pictures/screenshot_%Y-%m-%d_%H-%M-%S.png
+bindsym $mod+Shift+Print exec --no-startup-id scrot -s ~/Pictures/screenshot_%Y-%m-%d_%H-%M-%S.png
+# Manjaro help PDF removed (not available in Debian)
+bindsym $mod+Ctrl+x exec --no-startup-id xkill
+
+#######################
+## Window Movement ####
+#######################
+bindsym $mod+j focus left
+bindsym $mod+k focus down
+bindsym $mod+l focus up
+bindsym $mod+semicolon focus right
+
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+bindsym $mod+Shift+j move left
+bindsym $mod+Shift+k move down
+bindsym $mod+Shift+l move up
+bindsym $mod+Shift+semicolon move right
+
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+workspace_auto_back_and_forth yes
+bindsym $mod+b workspace back_and_forth
+bindsym $mod+Shift+b move container to workspace back_and_forth; workspace back_and_forth
+
+bindsym $mod+h split h; exec notify-send 'tile horizontally'
+bindsym $mod+v split v; exec notify-send 'tile vertically'
+bindsym $mod+q split toggle
+
+bindsym $mod+f fullscreen toggle
+bindsym $mod+s layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+e layout toggle split
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+space focus mode_toggle
+bindsym $mod+Shift+s sticky toggle
+bindsym $mod+a focus parent
+bindsym $mod+Shift+minus move scratchpad
+bindsym $mod+minus scratchpad show
+
+bindsym $mod+Ctrl+Right workspace next
+bindsym $mod+Ctrl+Left workspace prev
+
+set $ws1 1
+set $ws2 2
+set $ws3 3
+set $ws4 4
+set $ws5 5
+set $ws6 6
+set $ws7 7
+set $ws8 8
+
+bindsym $mod+1 workspace $ws1
+bindsym $mod+2 workspace $ws2
+bindsym $mod+3 workspace $ws3
+bindsym $mod+4 workspace $ws4
+bindsym $mod+5 workspace $ws5
+bindsym $mod+6 workspace $ws6
+bindsym $mod+7 workspace $ws7
+bindsym $mod+8 workspace $ws8
+
+bindsym $mod+Shift+1 move container to workspace $ws1; workspace $ws1
+bindsym $mod+Shift+2 move container to workspace $ws2; workspace $ws2
+bindsym $mod+Shift+3 move container to workspace $ws3; workspace $ws3
+bindsym $mod+Shift+4 move container to workspace $ws4; workspace $ws4
+bindsym $mod+Shift+5 move container to workspace $ws5; workspace $ws5
+bindsym $mod+Shift+6 move container to workspace $ws6; workspace $ws6
+bindsym $mod+Shift+7 move container to workspace $ws7; workspace $ws7
+bindsym $mod+Shift+8 move container to workspace $ws8; workspace $ws8
+
+#######################
+## Floating Rules #####
+#######################
+for_window [title="alsamixer"] floating enable border pixel 1
+for_window [class="Galculator"] floating enable border pixel 1
+for_window [class="GParted"] floating enable border normal
+for_window [class="Nitrogen"] floating enable sticky enable border normal
+for_window [class="Pavucontrol"] floating enable
+for_window [class="Simple-scan"] floating enable border normal
+for_window [class="(?i)virtualbox"] floating enable border normal
+for_window [class="Xfburn"] floating enable
+
+for_window [urgent=latest] focus
+
+bindsym $mod+Shift+c reload
+bindsym $mod+Shift+r restart
+
+bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'Exit i3?' -b 'Yes, exit i3' 'i3-msg exit'"
+
+#######################
+## Power Menu #########
+#######################
+bindsym $mod+0 mode "$mode_system"
+set $mode_system (l)ock, (e)xit, (s)uspend, (r)eboot, (Shift+s)hutdown
+mode "$mode_system" {
+    bindsym l exec --no-startup-id i3lock, mode "default"
+    bindsym s exec --no-startup-id systemctl suspend, mode "default"
+    bindsym e exec --no-startup-id i3-msg exit, mode "default"
+    bindsym r exec --no-startup-id systemctl reboot, mode "default"
+    bindsym Shift+s exec --no-startup-id systemctl poweroff, mode "default"
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+
+#######################
+## Resize Mode ########
+#######################
+bindsym $mod+r mode "resize"
+mode "resize" {
+    bindsym j resize shrink width 5 px or 5 ppt
+    bindsym k resize grow height 5 px or 5 ppt
+    bindsym l resize shrink height 5 px or 5 ppt
+    bindsym semicolon resize grow width 5 px or 5 ppt
+    bindsym Left resize shrink width 10 px or 10 ppt
+    bindsym Down resize grow height 10 px or 10 ppt
+    bindsym Up resize shrink height 10 px or 10 ppt
+    bindsym Right resize grow width 10 px or 10 ppt
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+
+#######################
+## Autostart ##########
+#######################
+exec --no-startup-id /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1
+exec --no-startup-id nitrogen --restore; sleep 1; picom -b
+exec --no-startup-id nm-applet
+exec --no-startup-id xfce4-power-manager
+exec --no-startup-id clipit
+exec --no-startup-id conky
+exec --no-startup-id xautolock -time 60 -locker "i3lock -c 000000"
+
+#######################
+## Bar ################
+#######################
+bar {
+    i3bar_command i3bar
+    status_command i3status
+    position bottom
+    strip_workspace_numbers yes
+    colors {
+        background #000000
+        statusline #FFFFFF
+        separator  #666666
+        focused_workspace  #2E9EF4 #FFFFFF
+        active_workspace   #2E9EF4 #222222 #FFFFFF
+        inactive_workspace #333333 #222222 #888888
+        binding_mode       #2F343A #900000 #FFFFFF
+        urgent_workspace   #2F343A #900000 #FFFFFF
+    }
+}
+bindsym $mod+m bar mode toggle
+
+#######################
+## Gaps ###############
+#######################
+gaps inner 09
+gaps outer -2
+smart_gaps on
+smart_borders on
+
