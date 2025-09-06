@@ -10,7 +10,7 @@ ulimit -n 8192
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
-#fastfetch
+fastfetch
 #syntax
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time Oh My Zsh is loaded, in which case,
@@ -158,7 +158,7 @@ alias n='nvim'
 alias nn='nvim .' # netrw
 alias k='kate'
 
-# Customs ops & cmds
+# ops & cmds
 alias s='sudo su'
 alias e='exit'
 alias q='exit'
@@ -183,7 +183,7 @@ alias yta='yt-dlp --extract-audio --audio-format mp3 '
 alias space='space'  # Double spaces lines of a text file.
 alias remap='remap'   # Remaps caps lock to the escape key.
 
-# Changing into the standard directories
+# Opening files and directories
 alias down='cd ~/Downloads'
 alias doc='cd ~/Documents'
 alias pic='cd ~/Pictures'
@@ -191,26 +191,14 @@ alias music='cd ~/Music'
 alias mus='cd ~/Music/Genres'
 alias vid='cd ~/Videos'
 alias opt='cd /opt'
-
-# REPOS
-#-----------------------------------------------------------------------------
-# Working with HARDN-XDR
-alias hardn='cd ~/Projects/LinuxThings/Hardn-Project'
-alias xdr='cd ~/Projects/LinuxThings/Hardn-Project/Chris/HARDN-XDR'
-alias tim='cd ~/Projects/LinuxThings/Hardn-Project/Tim'
-
-
-# Changing into various projects
 alias proj='cd ~/Projects'
+alias pythonproj='cd ~/Projects/Python'
 alias temp='cd ~/Templates'
 alias projects='cd ~/Projects'
 alias proj='cd ~/Projects'
 alias rand='cd ~/Documents/random/'
 alias res='~/Documents/Resumes/Latex/2025/'
-
-# StratumSec job interview project
 alias stratum='cd ~/Projects/StratumSec'
-
 alias keymaps='nvim ~/Projects/Neovim/nvim-keymaps-tutor.md'
 alias todo='cd ~/Documents/ToDos'
 alias bsuite='cat ~/Documents/BSuitestuff/bsuite.txt'
@@ -222,22 +210,13 @@ alias tutor='cd ~/Downloads/old-downloads/Backups/ExternalHD-2TB/Crucial2TB/'
 alias todo='cd ~/Documents/ToDo'
 alias bots='cd ~/Projects/Bots'
 alias nix='cd ~/Projects/LinuxThings'
+alias hardn='cd ~/Projects/LinuxThings/Hardn-Project'
 alias privaterepos='cd ~/Projects/LinuxThings/MyRepos-GitHub/PrivateRepos'
 alias mysterylabs='cd ~/Projects/WebAcademy-MysteryLabs'
 
 alias bsides='cd ~/Documents/BsidesTriad'
 alias linuxthings='cd ~/Projects/LinuxThings/'
-alias boot.dev='cd ~/Projects/BootDev'
-alias shellscripting='cd ~/Projects/LinuxThings/ShellScripting'
 
-# Rust programming
-alias learnrust='cd ~/Projects/RustProjects/LearnRust'
-alias rustbasics='cd ~/Projects/RustProjects/LearnRust/rust-basics'
-alias ruststuff='cd ~/Projects/RustProjects'
-
-# Python programming
-alias pythonstuff='cd ~/Projects/Python'
-alias careerist='cd ~/Projects/Careerist'
 
 # dot file access
 alias vb='vim ~/.bashrc'
@@ -248,12 +227,10 @@ alias late='ls -lt | head -n 10' # displays the most recent file added or edited
 alias ohmyzsh="cd ~/.oh-my-zsh"
 alias nvconf="cd ~/.config/nvim"
 alias alconf="nvim ~/.config/alacritty/alacritty.toml"
-alias vimplay='cd ~/Projects/Primeagen/VimMotionsTraining'
+alias vimprac='nvim ~/Projects/Primeagen/VimMotionsTraining'
 alias gitstuff='cd ~/Projects/GitStuff'
 alias prime='cd ~/Projects/Primeagen'
 alias alaconf='cd ~/.config/alacritty'
-
-
 
 # alias cmd=' '
 # alias cmd=' '
