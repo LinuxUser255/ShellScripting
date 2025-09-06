@@ -11,4 +11,6 @@ machines(){
         for item in ${MY_LIST[@]}; do echo -h $item | wc -c; done
 }
 
+machines
+
 

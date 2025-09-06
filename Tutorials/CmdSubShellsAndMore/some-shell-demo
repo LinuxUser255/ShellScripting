@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+#!/usr/bin/env bash
+
+# Simple demonstration of $(ps -p $$ -o comm=)
+# This script shows how to detect the current shell
+
+echo "=== Shell Detection Demo ==="
+echo
+
+# Get the current shell name
+current_shell="$(ps -p $$ -o comm=)"
+echo "Current shell: $current_shell"
+echo
+
+# Show the difference with and without the = sign
+echo "=== With and without the = sign ==="
+echo "Without =:"
+ps -p $$ -o comm
+echo
+echo "With =:"
+ps -p $$ -o comm=
+echo
+
+# Simple conditional based on shell type
+echo "=== Shell-specific behavior ==="
+if [ "$current_shell" = "bash" ]; then
+    echo "You're running this script in Bash!"
+    echo "Bash-specific features are available."
+elif [ "$current_shell" = "zsh" ]; then
+    echo "You're running this script in Zsh!"
+    echo "Zsh-specific features are available."
+elif [ "$current_shell" = "sh" ]; then
+    echo "You're running this script in basic sh shell."
+    echo "Using POSIX-compatible features only."
+else
+    echo "You're running this script in: $current_shell"
+    echo "This is a different shell type."
+fi
+echo
+
+# Show process ID and shell info
+echo "=== Process Information ==="
+echo "Current process ID ($$): $$"
+echo "Parent process ID (\$PPID): $PPID"
+echo "Shell executable path: $(command -v "$current_shell")"
+echo
+
+# Demonstrate use in a function
+check_shell_type() {
+    local shell_name
+    shell_name="$(ps -p $$ -o comm=)"
+
+    case "$shell_name" in
+        bash)
+            echo "Function detected: Bash shell"
+            return 0
+            ;;
+        zsh)
+            echo "Function detected: Zsh shell"
+            return 0
+            ;;
+        *)
+            echo "Function detected: Other shell ($shell_name)"
+            return 1
+            ;;
+    esac
+}
+
+echo "=== Function Demo ==="
+check_shell_type
+echo
+
+echo "=== Complete Process Info ==="
+echo "Full ps output for current process:"
+ps -p $$ -o pid,ppid,comm,args
