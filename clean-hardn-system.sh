@@ -25,7 +25,6 @@ NC='\033[0m' # No Color
 BOLD='\033[1m'
 
 # Script metadata
-SCRIPT_NAME="HARDN System Cleaner"
 SCRIPT_VERSION="1.0.0"
 LOG_FILE="/tmp/hardn-cleanup-$(date +%Y%m%d-%H%M%S).log"
 
@@ -38,7 +37,8 @@ log_message() {
     local level=$1
     shift
     local message="$*"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     
     case $level in
         ERROR)
@@ -76,7 +76,7 @@ display_banner() {
     echo -e "${PURPLE}"
     echo "╔══════════════════════════════════════════════════════╗"
     echo "║           HARDN COMPLETE SYSTEM CLEANUP             ║"
-    echo "║                   Version $SCRIPT_VERSION                      ║"
+    echo "║                   Version ${SCRIPT_VERSION}                    ║"
     echo "╚══════════════════════════════════════════════════════╝"
     echo -e "${NC}"
     echo
@@ -95,7 +95,7 @@ confirm_cleanup() {
     echo "  • All systemd service files"
     echo "  • All binaries in /usr/bin/hardn*"
     echo ""
-    read -p "Are you sure you want to continue? Type 'YES' to confirm: " confirmation
+    read -rp "Are you sure you want to continue? Type 'YES' to confirm: " confirmation
     
     if [[ "$confirmation" != "YES" ]]; then
         log_message INFO "Cleanup cancelled by user"
@@ -349,7 +349,8 @@ remove_build_artifacts() {
         "./debian/*.log"
     )
     
-    local current_dir=$(pwd)
+    local current_dir
+    current_dir=$(pwd)
     
     # Only clean if we're in a directory that looks like HARDN source
     if [[ -f "Cargo.toml" ]] || [[ -f "Makefile" ]] && [[ -d "src" ]]; then
