@@ -3,7 +3,7 @@
 # FILE: SMART-ZSTD-BACKUP.SH
 #=======================================================================
 # Drop this file anywhere, chmod +x it, run it on any folder.
-# Example: ./smart-zstd-backup.sh LinkedInApplyBots-Archived
+# Example: ./smart-zstd-backup.sh <directory-to-tar>-Archived
 
 # USAGE
 #=======================================================================
@@ -12,7 +12,7 @@
 # nvim smart-zstd-backup.sh
 # (paste the script above, Ctrl+O, Enter, Ctrl+X)
 # chmod +x smart-zstd-backup.sh
-# ./smart-zstd-backup.sh LinkedInApplyBots-Archived
+# ./smart-zstd-backup.sh <directory-to-tar>-Archived
 
 # WHAT IT DOES ON A 3900X
 #=======================================================================
@@ -21,7 +21,7 @@
 # → 1.49GiB  0:00:07  99%  ETA 0:00:00  @ 2.91GiB/s
 # SUCCESS! Archive is perfect.
 # Size: 412M  (saved 73%)
-# Safe to run: rm -rf "LinkedInApplyBots-Archived/"
+# Safe to run: rm -rf "<directory-to-tar>-Archived/"
 
 # WHAT IT DOES ON A CHEAP 2-CORE VPS
 #=======================================================================
