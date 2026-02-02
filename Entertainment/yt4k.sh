@@ -8,11 +8,35 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # =============================================================================
+# BANNER
+# =============================================================================
+
+show_banner() {
+    	echo
+    	echo -e "  \033[1;37m██   ██ ████████  \033[1;31m██████   ██       ██████  \033[0m"
+    	echo -e "  \033[1;37m██   ██    ██     \033[1;31m██   ██  ██       ██   ██ \033[0m"
+    	echo -e "  \033[1;37m███ ███    ██     \033[1;31m██   ██  ██       ██   ██ \033[0m"
+    	echo -e "  \033[1;37m █████     ██     \033[1;31m██   ██  ██       ██████  \033[0m"
+    	echo -e "  \033[1;37m  ███      ██     \033[1;31m██   ██  ██       ██      \033[0m"
+    	echo -e "  \033[1;37m   ██      ██     \033[1;31m██   ██  ██       ██      \033[0m"
+    	echo -e "  \033[1;37m   ██      ██     \033[1;31m██████   ███████  ██      \033[0m"
+    	echo
+    	echo -e "          \033[1;37m██  ████   \033[1;31m██  ██  ██  ██\033[0m"
+    	echo -e "          \033[1;37m██  ██ ██  \033[1;31m██  ██  ██ ██ \033[0m"
+    	echo -e "          \033[1;37m██  ██  ██ \033[1;31m██████  ████  \033[0m"
+    	echo -e "          \033[1;37m██  ██   ██    \033[1;31m██  ██ ██ \033[0m"
+    	echo
+    	echo -e "                \033[1;37m>_\033[1;31mdlp \033[1;37min \033[1;31m4K\033[0m"
+    	echo
+}
+
+# =============================================================================
 # CONFIGURATION
 # =============================================================================
 
 OUTPUT_DIR="${YT4K_OUTPUT_DIR:-$HOME/Videos}"
 MAX_HEIGHT="${YT4K_MAX_HEIGHT:-2160}"
+AUDIO_FORMAT="${YT4K_AUDIO_FORMAT:-mp3}"
 
 # =============================================================================
 # UTILITIES
@@ -26,20 +50,20 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 print_info() {
-    printf "${GREEN}[INFO]${NC} %s\n" "$1"
+        printf "${GREEN}[INFO]${NC} %s\n" "$1"
 }
 
 print_warning() {
-    printf "${YELLOW}[WARN]${NC} %s\n" "$1"
+        printf "${YELLOW}[WARN]${NC} %s\n" "$1"
 }
 
 print_error() {
-    printf "${RED}[ERROR]${NC} %s\n" "$1" >&2
+        printf "${RED}[ERROR]${NC} %s\n" "$1" >&2
 }
 
 die() {
-    print_error "$1"
-    exit 1
+        print_error "$1"
+        exit 1
 }
 
 # =============================================================================
@@ -47,21 +71,21 @@ die() {
 # =============================================================================
 
 check_requirements() {
-    if ! command -v yt-dlp &>/dev/null; then
-        die "yt-dlp is not installed. Install with: pip install yt-dlp"
-    fi
+        if ! command -v yt-dlp &>/dev/null; then
+            die "yt-dlp is not installed. Install with: pip install yt-dlp"
+        fi
 }
 
 validate_url() {
-    local url="$1"
-    if [[ -z "$url" ]]; then
+        local url="$1"
+        if [[ -z "$url" ]]; then
+            return 1
+        fi
+        # Basic URL validation
+        if [[ "$url" =~ ^https?:// ]]; then
+            return 0
+        fi
         return 1
-    fi
-    # Basic URL validation
-    if [[ "$url" =~ ^https?:// ]]; then
-        return 0
-    fi
-    return 1
 }
 
 # =============================================================================
@@ -69,58 +93,77 @@ validate_url() {
 # =============================================================================
 
 show_formats() {
-    local url="$1"
-    print_info "Available formats for: $url"
-    echo ""
-    yt-dlp -F "$url"
+        local url="$1"
+        print_info "Available formats for: $url"
+        echo ""
+        yt-dlp -F "$url"
 }
 
 download_4k() {
-    local url="$1"
-    local output_dir="$2"
-    
-    print_info "Downloading 4K video..."
-    print_info "Output directory: $output_dir"
-    echo ""
-    
-    yt-dlp \
-        -f "bestvideo[height<=${MAX_HEIGHT}]+bestaudio/best[height<=${MAX_HEIGHT}]/best" \
-        --merge-output-format mp4 \
-        -o "${output_dir}/%(title)s.%(ext)s" \
-        --progress \
-        "$url"
+        local url="$1"
+        local output_dir="$2"
+
+        print_info "Downloading 4K video..."
+        print_info "Output directory: $output_dir"
+        echo ""
+
+        yt-dlp \
+            -f "bestvideo[height<=${MAX_HEIGHT}]+bestaudio/best[height<=${MAX_HEIGHT}]/best" \
+            --merge-output-format mp4 \
+            -o "${output_dir}/%(title)s.%(ext)s" \
+            --progress \
+            "$url"
 }
 
 download_4k_exact() {
-    local url="$1"
-    local output_dir="$2"
-    
-    print_info "Downloading exact 4K (2160p) video..."
-    print_info "Output directory: $output_dir"
-    echo ""
-    
-    yt-dlp \
-        -f "bestvideo[height=2160]+bestaudio/best[height=2160]" \
-        --merge-output-format mp4 \
-        -o "${output_dir}/%(title)s.%(ext)s" \
-        --progress \
-        "$url"
+        local url="$1"
+        local output_dir="$2"
+
+        print_info "Downloading exact 4K (2160p) video..."
+        print_info "Output directory: $output_dir"
+        echo ""
+
+        yt-dlp \
+            -f "bestvideo[height=2160]+bestaudio/best[height=2160]" \
+            --merge-output-format mp4 \
+            -o "${output_dir}/%(title)s.%(ext)s" \
+            --progress \
+            "$url"
 }
 
 download_4k_mp4_only() {
-    local url="$1"
-    local output_dir="$2"
-    
-    print_info "Downloading 4K video (MP4 preferred)..."
-    print_info "Output directory: $output_dir"
-    echo ""
-    
-    yt-dlp \
-        -f "bestvideo[height<=${MAX_HEIGHT}][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
-        --merge-output-format mp4 \
-        -o "${output_dir}/%(title)s.%(ext)s" \
-        --progress \
-        "$url"
+        local url="$1"
+        local output_dir="$2"
+
+        print_info "Downloading 4K video (MP4 preferred)..."
+        print_info "Output directory: $output_dir"
+        echo ""
+
+        yt-dlp \
+            -f "bestvideo[height<=${MAX_HEIGHT}][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
+            --merge-output-format mp4 \
+            -o "${output_dir}/%(title)s.%(ext)s" \
+            --progress \
+            "$url"
+}
+
+download_audio() {
+        local url="$1"
+        local output_dir="$2"
+        local format="$3"
+
+        print_info "Downloading audio only (${format})..."
+        print_info "Output directory: $output_dir"
+        echo ""
+
+        yt-dlp \
+            -f "bestaudio" \
+            -x \
+            --audio-format "$format" \
+            --audio-quality 0 \
+            -o "${output_dir}/%(title)s.%(ext)s" \
+            --progress \
+            "$url"
 }
 
 # =============================================================================
@@ -131,24 +174,29 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS] <URL>
 
-Download 4K videos using yt-dlp.
+Download 4K videos or audio using yt-dlp.
 
 OPTIONS:
-    -h, --help          Show this help message
-    -f, --formats       List available formats (no download)
-    -e, --exact         Download exact 4K (2160p) only, fail if unavailable
-    -m, --mp4           Prefer MP4 format
-    -o, --output DIR    Output directory (default: $OUTPUT_DIR)
+    -h, --help              Show this help message
+    -f, --formats           List available formats (no download)
+    -e, --exact             Download exact 4K (2160p) only, fail if unavailable
+    -m, --mp4               Prefer MP4 format
+    -a, --audio             Download audio only
+    --audio-format FMT      Audio format: mp3, flac, wav, m4a, opus (default: mp3)
+    -o, --output DIR        Output directory (default: $OUTPUT_DIR)
 
 ENVIRONMENT VARIABLES:
     YT4K_OUTPUT_DIR     Default output directory
     YT4K_MAX_HEIGHT     Maximum video height (default: 2160)
+    YT4K_AUDIO_FORMAT   Default audio format (default: mp3)
 
 EXAMPLES:
     $(basename "$0") "https://youtube.com/watch?v=VIDEO_ID"
     $(basename "$0") -f "https://youtube.com/watch?v=VIDEO_ID"
     $(basename "$0") -e -o ~/Downloads "https://youtube.com/watch?v=VIDEO_ID"
     $(basename "$0") -m "https://youtube.com/watch?v=VIDEO_ID"
+    $(basename "$0") -a "https://youtube.com/watch?v=VIDEO_ID"
+    $(basename "$0") -a --audio-format flac "https://youtube.com/watch?v=VIDEO_ID"
 
 EOF
 }
@@ -158,81 +206,98 @@ EOF
 # =============================================================================
 
 main() {
-    local show_formats_only=false
-    local exact_4k=false
-    local mp4_only=false
-    local output_dir="$OUTPUT_DIR"
-    local url=""
-    
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h|--help)
-                usage
-                exit 0
-                ;;
-            -f|--formats)
-                show_formats_only=true
-                shift
-                ;;
-            -e|--exact)
-                exact_4k=true
-                shift
-                ;;
-            -m|--mp4)
-                mp4_only=true
-                shift
-                ;;
-            -o|--output)
-                if [[ -z "${2:-}" ]]; then
-                    die "Option -o requires an argument"
-                fi
-                output_dir="$2"
-                shift 2
-                ;;
-            -*)
-                die "Unknown option: $1"
-                ;;
-            *)
-                url="$1"
-                shift
-                ;;
-        esac
-    done
-    
-    # Check requirements
-    check_requirements
-    
-    # Validate URL
-    if [[ -z "$url" ]]; then
-        print_error "No URL provided"
-        echo ""
-        usage
-        exit 1
-    fi
-    
-    if ! validate_url "$url"; then
-        die "Invalid URL: $url"
-    fi
-    
-    # Create output directory if needed
-    if [[ ! -d "$output_dir" ]]; then
-        print_info "Creating output directory: $output_dir"
-        mkdir -p "$output_dir"
-    fi
-    
-    # Execute requested action
-    if [[ "$show_formats_only" == true ]]; then
-        show_formats "$url"
-    elif [[ "$exact_4k" == true ]]; then
-        download_4k_exact "$url" "$output_dir"
-    elif [[ "$mp4_only" == true ]]; then
-        download_4k_mp4_only "$url" "$output_dir"
-    else
-        download_4k "$url" "$output_dir"
-    fi
-    
-    print_info "Done!"
+        show_banner
+
+        local show_formats_only=false
+        local exact_4k=false
+        local mp4_only=false
+        local audio_only=false
+        local audio_format="$AUDIO_FORMAT"
+        local output_dir="$OUTPUT_DIR"
+        local url=""
+
+        # Parse arguments
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                -h|--help)
+                    usage
+                    exit 0
+                    ;;
+                -f|--formats)
+                    show_formats_only=true
+                    shift
+                    ;;
+                -e|--exact)
+                    exact_4k=true
+                    shift
+                    ;;
+                -m|--mp4)
+                    mp4_only=true
+                    shift
+                    ;;
+                -a|--audio)
+                    audio_only=true
+                    shift
+                    ;;
+                --audio-format)
+                    if [[ -z "${2:-}" ]]; then
+                        die "Option --audio-format requires an argument"
+                    fi
+                    audio_format="$2"
+                    shift 2
+                    ;;
+                -o|--output)
+                    if [[ -z "${2:-}" ]]; then
+                        die "Option -o requires an argument"
+                    fi
+                    output_dir="$2"
+                    shift 2
+                    ;;
+                -*)
+                    die "Unknown option: $1"
+                    ;;
+                *)
+                    url="$1"
+                    shift
+                    ;;
+            esac
+        done
+
+        # Check requirements
+        check_requirements
+
+        # Validate URL
+        if [[ -z "$url" ]]; then
+            print_error "No URL provided"
+            echo ""
+            usage
+            exit 1
+        fi
+
+        if ! validate_url "$url"; then
+            die "Invalid URL: $url"
+        fi
+
+        # Create output directory if needed
+        if [[ ! -d "$output_dir" ]]; then
+            print_info "Creating output directory: $output_dir"
+            mkdir -p "$output_dir"
+        fi
+
+        # Execute requested action
+        if [[ "$show_formats_only" == true ]]; then
+            show_formats "$url"
+        elif [[ "$audio_only" == true ]]; then
+            download_audio "$url" "$output_dir" "$audio_format"
+        elif [[ "$exact_4k" == true ]]; then
+            download_4k_exact "$url" "$output_dir"
+        elif [[ "$mp4_only" == true ]]; then
+            download_4k_mp4_only "$url" "$output_dir"
+        else
+            download_4k "$url" "$output_dir"
+        fi
+
+        print_info "Done!"
 }
 
 main "$@"
