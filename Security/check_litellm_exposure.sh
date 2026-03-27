@@ -6,10 +6,12 @@
 #  published March 24, 2026 between 10:39–16:00 UTC.
 #
 #  Supports: macOS and Linux
-#  Usage:    chmod +x check_litellm_exposure.sh && ./check_litellm_exposure.sh
+#  Usage:    ./check_litellm_exposure.sh [search-root]  (default: $HOME)
 # =============================================================================
 
 set -euo pipefail
+
+SEARCH_ROOT="${1:-$HOME}"
 
 # ── Colors ────────────────────────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -75,13 +77,15 @@ echo -e "${BOLD}║       LiteLLM Supply Chain Exposure Checker          ║${RE
 echo -e "${BOLD}║       TeamPCP / CVE-2026-33634 / March 24 2026       ║${RESET}"
 echo -e "${BOLD}╚══════════════════════════════════════════════════════╝${RESET}"
 echo -e "  ${DIM}OS: $OS  |  User: $USER  |  Date: $(date)${RESET}"
+echo -e "  ${DIM}Usage: ./check_litellm_exposure.sh [search-root]  (default: \$HOME)${RESET}"
+echo -e "  ${DIM}Search root: $SEARCH_ROOT${RESET}"
 
 
 # =============================================================================
 header "1. pip — Direct Installation Check"
 # =============================================================================
 
-PYTHONS=(python python3 python3.10 python3.11 python3.12 python3.13 python3.14)
+mapfile -t PYTHONS < <(compgen -c python | sort -u | xargs -I{} which {} 2>/dev/null | sort -u)
 $IS_MAC && PYTHONS+=(/opt/homebrew/bin/python3)
 
 LITELLM_FOUND_PIP=false
@@ -115,7 +119,7 @@ fi
 header "2. Malicious .pth File — litellm_init.pth"
 # =============================================================================
 
-PTH_SEARCH_DIRS=(/usr "$HOME/.local" "$HOME/Projects")
+PTH_SEARCH_DIRS=(/usr "$HOME/.local" "$SEARCH_ROOT")
 $IS_MAC && PTH_SEARCH_DIRS+=(/opt/homebrew /opt "$HOME/Library")
 $IS_LINUX && PTH_SEARCH_DIRS+=(/opt)
 [[ -d "$HOME/.pyenv" ]] && PTH_SEARCH_DIRS+=("$HOME/.pyenv")
@@ -174,7 +178,8 @@ for py in python3 python3.11 python3.12 python3.14; do
 done
 scan_pth_content "active Python site-packages" "${SITE_DIRS[@]:-/dev/null}"
 scan_pth_content "pyenv versions"   "${HOME}/.pyenv/versions"
-scan_pth_content "Projects venvs"   "${HOME}/Projects"
+mapfile -t VENV_DIRS < <(find "$SEARCH_ROOT" -name "pyvenv.cfg" -not -path "*/\.*" 2>/dev/null | xargs -r dirname)
+scan_pth_content "discovered venvs" "${VENV_DIRS[@]:-/dev/null}"
 $IS_MAC && scan_pth_content "Homebrew Python" "/opt/homebrew/lib"
 
 
@@ -182,7 +187,7 @@ $IS_MAC && scan_pth_content "Homebrew Python" "/opt/homebrew/lib"
 header "4. litellm Package in site-packages"
 # =============================================================================
 
-INSTALL_SEARCH=(/usr/local /opt/homebrew "$HOME/.local" "$HOME/.pyenv" "$HOME/Projects")
+INSTALL_SEARCH=(/usr/local /opt/homebrew "$HOME/.local" "$HOME/.pyenv" "$SEARCH_ROOT")
 $IS_MAC && INSTALL_SEARCH+=("$HOME/Library")
 
 INSTALLED_FOUND=false
@@ -319,7 +324,7 @@ header "7. Project Dependency Files"
 # =============================================================================
 
 info "Scanning requirements.txt files..."
-req_hits=$(run_find "$HOME/Projects" -name "requirements*.txt" \
+req_hits=$(run_find "$SEARCH_ROOT" -name "requirements*.txt" \
     | xargs -r grep -l "litellm" 2>/dev/null || true)
 if [[ -n "$req_hits" ]]; then
     warn "litellm referenced in requirements file(s):"
@@ -329,7 +334,7 @@ else
 fi
 
 info "Scanning pyproject.toml files..."
-pyproject_hits=$(run_find "$HOME/Projects" -name "pyproject.toml" \
+pyproject_hits=$(run_find "$SEARCH_ROOT" -name "pyproject.toml" \
     | xargs -r grep -l "litellm" 2>/dev/null || true)
 if [[ -n "$pyproject_hits" ]]; then
     warn "litellm referenced in pyproject.toml:"
@@ -339,7 +344,7 @@ else
 fi
 
 info "Scanning package.json files..."
-pkg_hits=$(run_find "$HOME/Projects" -name "package.json" \
+pkg_hits=$(run_find "$SEARCH_ROOT" -name "package.json" \
     -not -path "*/node_modules/*" \
     | xargs -r grep -l "litellm" 2>/dev/null || true)
 if [[ -n "$pkg_hits" ]]; then
@@ -457,7 +462,7 @@ fi
 
 # Check git configs/remotes for the exfil domain
 info "Scanning git remotes for exfiltration domains..."
-git_hits=$(run_find "$HOME/Projects" -name "config" -path "*/.git/config" \
+git_hits=$(run_find "$SEARCH_ROOT" -name "config" -path "*/.git/config" \
     | xargs -r grep -l "litellm\.cloud\|aquasecurtiy" 2>/dev/null || true)
 if [[ -n "$git_hits" ]]; then
     fail "Suspicious git remote found in: $git_hits"
