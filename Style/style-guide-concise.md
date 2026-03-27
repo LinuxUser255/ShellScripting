@@ -1,5 +1,13 @@
-# CODING & SCRITPTING STYLE GUIDE FOR `cars.sh`
+# CODING & SCRITPTING STYLE GUIDE
 
+## The following is my Shell Scripting preferences and syle
+
+It consistis of some usage of shortened commands (code golf)
+
+A preference for case switch over if-else:
+a specific case-switch, the 'Simpler case statement to set variable' (example below)
+A proclivity for short-circut if-else, known as ternary in other languages)
+And even more important is efficiency as illustrated via processes-level-parallelism
 
 ## Table of Contents:
 
@@ -94,36 +102,35 @@ f()for i in "$@"; do echo "$i"; done
 The `:` built-in can be used to avoid repeating `variable=` in a case statement.
 The `$_` variable stores the last argument of the last command. `:` always succeeds
 so it can be used to store the variable value.
-
+and using 8 space Indentation on code body
 
 ```bash
 # Modified snippet from Neofetch.
 case "$OSTYPE" in
-    "darwin"*)
-        : "MacOS"
-    ;;
+        "darwin"*)
+            : "MacOS"
+        ;;
 
-    "linux"*)
-        : "Linux"
-    ;;
+        "linux"*)
+            : "Linux"
+        ;;
 
-    *"bsd"* | "dragonfly" | "bitrig")
-        : "BSD"
-    ;;
+        *"bsd"* | "dragonfly" | "bitrig")
+            : "BSD"
+        ;;
 
-    "cygwin" | "msys" | "win32")
-        : "Windows"
-    ;;
+        "cygwin" | "msys" | "win32")
+            : "Windows"
+        ;;
 
-    *)
-        printf '%s\n' "Unknown OS detected, aborting..." >&2
-        exit 1
-    ;;
+        *)
+            printf '%s\n' "Unknown OS detected, aborting..." >&2
+            exit 1
+        ;;
 esac
 
 # Finally, set the variable.
 os="$_"
-
 ```
 
 <br>
@@ -194,6 +201,7 @@ get_shell() {
 }
 
 ```
+
 
 <br>
 
@@ -830,7 +838,74 @@ using a PID queue and `wait`. It’s especially valuable when:
 
 # 3. Appearance & aesthetics
 
-### use 8 spaces for the function body
+### use 8 spaces for the function body  Indentation
 
+### And all functions are to be called in the main function
+
+
+
+**All function body code is indented 8 spaces**
+```bash
+
+install_prompt() {
+        # Acceptable inputs: yes, y, no, n and Enter1
+        read -r -p "Ready to install the new Neovim configuration? (yes/no) or hit Enter: " confirm
+        confirm=${confirm:-"yes"}
+        confirm=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
+        if ! [[ "$confirm" =~ ^(yes|y)$ ]]; then
+            printf "\e[1;31m[-] Exiting installation.\e[0m\n"
+            exit 1
+        fi
+
+}
+
+
+get_os() {
+    case "$(uname -s)" in
+        "Darwin")
+            # Get macOS version
+            darwin_version=$(sw_vers -productVersion)
+            case "$darwin_version" in
+                16.*) OS="Tahoe" ;;
+                15.*) OS="Sequoia" ;;
+                14.*) OS="Sonoma" ;;
+                13.*) OS="Ventura" ;;
+                12.*) OS="Monterey" ;;
+                *)    OS="macOS" ;;
+            esac
+        ;;
+        "Linux")
+            OS="Linux"  # Directly set OS to "Linux"
+        ;;
+        *BSD|DragonFly|Bitrig)
+            OS="BSD"    # Directly set OS to "BSD"
+        ;;
+        *)
+            printf "\e[1;31m[-] Unknown OS detected: '%s', aborting...\e[0m\n" "$(uname -s)" >&2
+            exit 1
+        ;;
+    esac
+
+    # No need for $_ here, OS is already set
+    printf "\e[1;32m[+] Detected OS: %s\e[0m\n" "$OS"
+}
+
+
+main() {
+        install_prompt
+        get_os
+        detect_distro
+        full_sys_upgrade
+        check_neovim_version  # This will call build_neovim if needed
+        install_nvim_config_deps
+        remove_old_config  # Then remove old config (this will recreate the directory)
+        install_config
+}
+
+main
+
+```
 
 <br>
+
+# End of document
