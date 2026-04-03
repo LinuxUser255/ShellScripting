@@ -1,146 +1,138 @@
 #!/usr/bin/env bash
 
-# =============================================================================
-# File Creator - Create boilerplate files with proper templates
-# =============================================================================
+# Instantly Create & chmod a new file type of your choosing.
+# This script allows you to create Python, Shell, Go, txt, Markdown, Flask, C++, C, or Rust files.
+# The file is created, optionally populated with boilerplate, made executable (if needed), and opened in NeoVim.
 
-set -euo pipefail
-IFS=$'\n\t'
+echo -e "Select a file type to create: \n1 = Python\n2 = Shell Script\n3 = Go\n4 = txt\n5 = Markdown\n6 = Flask\n7 = C++\n8 = C\n9 = Rust"
+read -r sel
 
-# =============================================================================
-# CONFIGURATION
-# =============================================================================
+echo "Enter the file name (without extension): "
+read -r NAME
 
-EDITOR="${EDITOR:-nvim}"
-
-# =============================================================================
-# UTILITIES
-# =============================================================================
-
-log() {
-    printf "[%s] %s\n" "$(date +%H:%M:%S)" "$*"
-}
-
-abort() {
-    printf "Error: %s\n" "$*" >&2
-    exit 1
-}
-
-check_requirements() {
-    command -v "$EDITOR" >/dev/null || abort "$EDITOR not found"
-}
-
-# =============================================================================
-# FILE TEMPLATES
-# =============================================================================
-
-create_python() {
-    local name="$1"
-    cat <<'EOF' > "${name}.py"
+case $sel in
+    1)  # Python script
+        touch "$NAME.py"
+        cat <<EOF > "$NAME.py"
 #!/usr/bin/env python3
-"""Module description."""
 
 
 def main():
-    """Entry point."""
-    pass
+    print("hello, world!")
 
 
 if __name__ == "__main__":
     main()
-EOF
-    chmod +x "${name}.py"
-    log "Created ${name}.py"
-}
 
-create_shell() {
-    local name="$1"
-    cat <<'EOF' > "${name}.sh"
+EOF
+        chmod +x "$NAME.py"
+        nvim "$NAME.py"
+        ;;
+
+    2)  # Shell script  # error command substitution: line 35: syntax error: unexpected end of file
+        touch "$NAME.sh"
+        cat <<'EOF' > "$NAME.sh"
 #!/usr/bin/env bash
 
 set -euo pipefail
-IFS=$'\n\t'
 
-log() {
-    printf "[%s] %s\n" "$(date +%H:%M:%S)" "$*"
+# Auto-detect CPU count, or you can set it manually
+MAX_JOBS=$(nproc)
+joblist=()
+
+
+#TODO: Put your code here, in the `task()` and `main()` functions.
+# Everything else is infrastructure.
+task() {
+        local item="$1"
+
+        echo "Done: $item"
 }
 
-abort() {
-    printf "Error: %s\n" "$*" >&2
-    exit 1
+
+#INFO: Process Pool. Treat this like a library function. Do not touch.
+run_pool() {
+        task "$1" &
+        joblist+=($!)  # Save job Process ID for later waiting
+
+        # Process Pool full: wait for the oldest job to finish, then remove it from the list
+        if (( ${#jobslist[@]} >= MAX_JOBS )); then
+            wait "${joblist[0]}"
+            joblist=("${joblist[@]:1}")
+        fi
 }
 
+
+#INFO: Main function.
+# Put your code from the `task()` function here.
 main() {
-    log "Starting..."
+    for item in "$@"; do
+        run_pool "$item"
+    done
+
+    wait # drain any remaining jobs
+    echo "All jobs done."
+
 }
 
 main "$@"
-EOF
-    chmod +x "${name}.sh"
-    log "Created ${name}.sh"
-}
 
-create_go() {
-    local name="$1"
-    cat <<'EOF' > "${name}.go"
+EOF
+        chmod +x "$NAME.sh"
+        nvim "$NAME.sh"
+        ;;
+
+    3)  # Go file
+        touch "$NAME.go"
+        cat <<EOF > "$NAME.go"
 package main
 
 import "fmt"
 
 func main() {
     fmt.Println("Hello, World!")
+
 }
+
 EOF
-    log "Created ${name}.go"
-}
+        nvim "$NAME.go"
+        ;;
 
-create_text() {
-    local name="$1"
-    printf "# Title\n" > "${name}.txt"
-    log "Created ${name}.txt"
-}
+    4)  # Text file
+        touch "$NAME.txt"
+        echo "# Title" > "$NAME.txt"
+        nvim "$NAME.txt"
+        ;;
 
-create_markdown() {
-    local name="$1"
-    cat <<'EOF' > "${name}.md"
-# Title
+    5)  # Markdown file
+        touch "$NAME.md"
+        echo "# Title" > "$NAME.md"
+        nvim "$NAME.md"
+        ;;
 
-## Overview
-
-## Usage
-
-## References
-EOF
-    log "Created ${name}.md"
-}
-
-create_flask() {
-    local name="$1"
-    cat <<'EOF' > "${name}.py"
+    6)  # Flask Python script
+        touch "$NAME.py"
+        cat <<EOF > "$NAME.py"
 #!/usr/bin/env python3
-"""Flask application."""
 
 from flask import Flask
 
 app = Flask(__name__)
 
-
-@app.route("/")
+@app.route('/')
 def home():
-    """Home route."""
-    return "Home"
+    return 'Home'
 
-
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    app.run()
 EOF
-    chmod +x "${name}.py"
-    log "Created ${name}.py (Flask)"
-}
+        chmod +x "$NAME.py"
+        nvim "$NAME.py"
+        ;;
 
-create_cpp() {
-    local name="$1"
-    cat <<'EOF' > "${name}.cpp"
+    7)  # C++ file
+        touch "$NAME.cpp"
+        cat <<EOF > "$NAME.cpp"
 #include <iostream>
 
 using namespace std;
@@ -148,102 +140,44 @@ using namespace std;
 int main() {
     cout << "Hello, World!" << endl;
     return 0;
+
 }
 EOF
-    log "Created ${name}.cpp"
-}
+        nvim "$NAME.cpp"
+        ;;
 
-create_c() {
-    local name="$1"
-    cat <<'EOF' > "${name}.c"
+    8)  # C file
+        touch "$NAME.c"
+        cat <<EOF > "$NAME.c"
 #include <stdio.h>
 
 int main() {
     printf("Hello, World!\n");
     return 0;
+
 }
 EOF
-    log "Created ${name}.c"
-}
+        nvim "$NAME.c"
+        ;;
 
-create_rust() {
-    local name="$1"
-    cat <<'EOF' > "${name}.rs"
+    9)  # Rust file
+        touch "$NAME.rs"
+        cat <<EOF > "$NAME.rs"
+//use std::io;
+
 fn main() {
     println!("Hello, World!");
+
+
 }
 EOF
-    log "Created ${name}.rs"
-}
+        nvim "$NAME.rs"
+        ;;
 
-# =============================================================================
-# USER INTERFACE
-# =============================================================================
+    *)  # Invalid selection
+        echo "Invalid selection. Please choose a number between 1 and 9."
+        exit 1
+        ;;
+esac
 
-show_menu() {
-    cat <<'EOF'
-Select a file type to create:
-  1) Python
-  2) Shell Script
-  3) Go
-  4) Text
-  5) Markdown
-  6) Flask
-  7) C++
-  8) C
-  9) Rust
-  q) Quit
-EOF
-}
-
-get_selection() {
-    local sel
-    read -rp "Selection: " sel
-    printf "%s" "$sel"
-}
-
-get_filename() {
-    local name
-    read -rp "Enter filename (without extension): " name
-
-    # Sanitize input
-    case "$name" in
-        [a-zA-Z0-9_-]*) printf "%s" "$name" ;;
-        *) abort "Invalid filename. Use alphanumeric characters, underscore, or hyphen." ;;
-    esac
-}
-
-# =============================================================================
-# MAIN
-# =============================================================================
-
-main() {
-    check_requirements
-
-    show_menu
-    local selection
-    selection=$(get_selection)
-
-    [[ "$selection" == "q" ]] && exit 0
-
-    local filename
-    filename=$(get_filename)
-
-    case "$selection" in
-        1) create_python "$filename" ;;
-        2) create_shell "$filename" ;;
-        3) create_go "$filename" ;;
-        4) create_text "$filename" ;;
-        5) create_markdown "$filename" ;;
-        6) create_flask "$filename" ;;
-        7) create_cpp "$filename" ;;
-        8) create_c "$filename" ;;
-        9) create_rust "$filename" ;;
-        *) abort "Invalid selection. Choose 1-9 or q to quit." ;;
-    esac
-
-    # Open in editor
-    "$EDITOR" "${filename}".*
-}
-
-main "$@"
+exit 0
