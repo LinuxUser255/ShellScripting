@@ -1,0 +1,249 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# File Creator - Create boilerplate files with proper templates
+# =============================================================================
+
+set -euo pipefail
+IFS=$'\n\t'
+
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+EDITOR="${EDITOR:-nvim}"
+
+# =============================================================================
+# UTILITIES
+# =============================================================================
+
+log() {
+    printf "[%s] %s\n" "$(date +%H:%M:%S)" "$*"
+}
+
+abort() {
+    printf "Error: %s\n" "$*" >&2
+    exit 1
+}
+
+check_requirements() {
+    command -v "$EDITOR" >/dev/null || abort "$EDITOR not found"
+}
+
+# =============================================================================
+# FILE TEMPLATES
+# =============================================================================
+
+create_python() {
+    local name="$1"
+    cat <<'EOF' > "${name}.py"
+#!/usr/bin/env python3
+"""Module description."""
+
+
+def main():
+    """Entry point."""
+    pass
+
+
+if __name__ == "__main__":
+    main()
+EOF
+    chmod +x "${name}.py"
+    log "Created ${name}.py"
+}
+
+create_shell() {
+    local name="$1"
+    cat <<'EOF' > "${name}.sh"
+#!/usr/bin/env bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+log() {
+    printf "[%s] %s\n" "$(date +%H:%M:%S)" "$*"
+}
+
+abort() {
+    printf "Error: %s\n" "$*" >&2
+    exit 1
+}
+
+main() {
+    log "Starting..."
+}
+
+main "$@"
+EOF
+    chmod +x "${name}.sh"
+    log "Created ${name}.sh"
+}
+
+create_go() {
+    local name="$1"
+    cat <<'EOF' > "${name}.go"
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, World!")
+}
+EOF
+    log "Created ${name}.go"
+}
+
+create_text() {
+    local name="$1"
+    printf "# Title\n" > "${name}.txt"
+    log "Created ${name}.txt"
+}
+
+create_markdown() {
+    local name="$1"
+    cat <<'EOF' > "${name}.md"
+# Title
+
+## Overview
+
+## Usage
+
+## References
+EOF
+    log "Created ${name}.md"
+}
+
+create_flask() {
+    local name="$1"
+    cat <<'EOF' > "${name}.py"
+#!/usr/bin/env python3
+"""Flask application."""
+
+from flask import Flask
+
+app = Flask(__name__)
+
+
+@app.route("/")
+def home():
+    """Home route."""
+    return "Home"
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+EOF
+    chmod +x "${name}.py"
+    log "Created ${name}.py (Flask)"
+}
+
+create_cpp() {
+    local name="$1"
+    cat <<'EOF' > "${name}.cpp"
+#include <iostream>
+
+using namespace std;
+
+int main() {
+    cout << "Hello, World!" << endl;
+    return 0;
+}
+EOF
+    log "Created ${name}.cpp"
+}
+
+create_c() {
+    local name="$1"
+    cat <<'EOF' > "${name}.c"
+#include <stdio.h>
+
+int main() {
+    printf("Hello, World!\n");
+    return 0;
+}
+EOF
+    log "Created ${name}.c"
+}
+
+create_rust() {
+    local name="$1"
+    cat <<'EOF' > "${name}.rs"
+fn main() {
+    println!("Hello, World!");
+}
+EOF
+    log "Created ${name}.rs"
+}
+
+# =============================================================================
+# USER INTERFACE
+# =============================================================================
+
+show_menu() {
+    cat <<'EOF'
+Select a file type to create:
+  1) Python
+  2) Shell Script
+  3) Go
+  4) Text
+  5) Markdown
+  6) Flask
+  7) C++
+  8) C
+  9) Rust
+  q) Quit
+EOF
+}
+
+get_selection() {
+    local sel
+    read -rp "Selection: " sel
+    printf "%s" "$sel"
+}
+
+get_filename() {
+    local name
+    read -rp "Enter filename (without extension): " name
+
+    # Sanitize input
+    case "$name" in
+        [a-zA-Z0-9_-]*) printf "%s" "$name" ;;
+        *) abort "Invalid filename. Use alphanumeric characters, underscore, or hyphen." ;;
+    esac
+}
+
+# =============================================================================
+# MAIN
+# =============================================================================
+
+main() {
+    check_requirements
+
+    show_menu
+    local selection
+    selection=$(get_selection)
+
+    [[ "$selection" == "q" ]] && exit 0
+
+    local filename
+    filename=$(get_filename)
+
+    case "$selection" in
+        1) create_python "$filename" ;;
+        2) create_shell "$filename" ;;
+        3) create_go "$filename" ;;
+        4) create_text "$filename" ;;
+        5) create_markdown "$filename" ;;
+        6) create_flask "$filename" ;;
+        7) create_cpp "$filename" ;;
+        8) create_c "$filename" ;;
+        9) create_rust "$filename" ;;
+        *) abort "Invalid selection. Choose 1-9 or q to quit." ;;
+    esac
+
+    # Open in editor
+    "$EDITOR" "${filename}".*
+}
+
+main "$@"
